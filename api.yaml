@@ -10,21 +10,32 @@ servers:
       port:
         enum:
           - '3000'
+          - '8080'
         default: '3000'
   - url: http://localhost:3000/
     description: Local test instance
+  - url: http://10.239.68.77:3000
+    description: Playground Server
 
 security:
   - bearerAuth: []
 
 paths:
 
-  /scores:
+  /scores/{challenge}:
     get:
       summary: Get all scores
       operationId: getScores
       tags:
         - scores
+      parameters:
+        - name: challenge
+          in: path
+          description: Challenge name
+          required: true
+          schema:
+            type: string
+          example: "23_3_1"
       responses:
         '200':
           description: OK
@@ -53,3 +64,5 @@ components:
           type: string
         binary:
           type: string
+
+  
