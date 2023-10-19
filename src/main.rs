@@ -1,4 +1,5 @@
 use axum::{extract, http::StatusCode, response::IntoResponse, routing::get, Router};
+use envcrypt::option_envc;
 use http::Method;
 use log::{debug, error, info, LevelFilter};
 use scoreboard_db::{Db, Score};
@@ -33,7 +34,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     info!("Checking DB credentials");
-    let _ = match option_env!("DB_PASSWORD") {
+    let _ = match option_envc!("DB_PASSWORD") {
         Some(pass) => pass,
         None => {
             return Err(

@@ -1,6 +1,6 @@
 [package]
 name = "challenge_server"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -18,5 +18,6 @@ serde_json = "1.0.94"
 rand = "0.8.4"
 lazy_static = "1.4.0"
 tower-service = "0.3.2"
+envcrypt = "0.5.0"
 
-scoreboard_db = { path = "../scoreboard_db" }
+scoreboard_db = { path = "../scoreboard_db", features = ["database"]}
