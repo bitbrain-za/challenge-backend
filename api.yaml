@@ -1,0 +1,55 @@
+openapi: "3.0.2"
+info:
+  title: Challenge Backend
+  version: "1.0"
+servers:
+  - url: http://{domain}:{port}
+    variables:
+      domain:
+        default: localhost
+      port:
+        enum:
+          - '3000'
+        default: '3000'
+  - url: http://localhost:3000/
+    description: Local test instance
+
+security:
+  - bearerAuth: []
+
+paths:
+
+  /scores:
+    get:
+      summary: Get all scores
+      operationId: getScores
+      tags:
+        - scores
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Score'
+
+
+components:
+  schemas:
+    Score:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        time:
+          type: integer
+          format: int64
+        language:
+          type: string
+        binary:
+          type: string
