@@ -47,20 +47,12 @@ paths:
                   $ref: '#/components/schemas/Score'
 
 
-  /submit/{challenge}:
+  /submit:
     post:
       summary: Submit a run
       operationId: submitRun
       tags:
         - run
-      parameters:
-        - name: challenge
-          in: path
-          description: Challenge name
-          required: true
-          schema:
-            type: string
-          example: "23_3_1"
       requestBody:
         content:
           application/json:
@@ -81,6 +73,8 @@ components:
     Submit: 
       type: object
       properties:
+        challenge:
+          type: string
         player:
           type: string
         name:

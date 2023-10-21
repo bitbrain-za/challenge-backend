@@ -52,7 +52,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let app = Router::new()
-        .route("/submit/:id", post(post_run))
+        .route("/submit", post(post_run))
         .route("/scores/:id", get(get_scores))
         .layer(
             tower_http::cors::CorsLayer::new()
@@ -115,12 +115,9 @@ async fn get_scores(extract::Path(id): extract::Path<String>) -> impl IntoRespon
     (StatusCode::OK, serde_json::to_string(&scores).unwrap())
 }
 
-async fn post_run(extract::Path(id): extract::Path<String>, body: String) -> impl IntoResponse {
-    debug!("Post Run for challenge {}", id);
-
-    debug!("body: {}", body);
+async fn post_run(body: String) -> impl IntoResponse {
     let run: Submission = serde_json::from_str(&body).unwrap();
-    debug!("Run: {:?}", run);
+    // debug!("Run: {:?}", run);
     let res = run.run();
     (StatusCode::OK, serde_json::to_string(&res).unwrap())
 }
