@@ -1,10 +1,18 @@
-use axum::{extract, http::StatusCode, response::IntoResponse, routing::get, Router};
+use axum::{
+    extract,
+    http::StatusCode,
+    response::IntoResponse,
+    routing::{get, post},
+    Router,
+};
 use envcrypt::option_envc;
 use http::Method;
 use log::{debug, error, info, LevelFilter};
 use scoreboard_db::{Db, Score};
 use simple_logger::SimpleLogger;
 use tower_http::cors::Any;
+mod run;
+use run::Submission;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -43,19 +51,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    let app = Router::new().route("/scores/:id", get(get_scores)).layer(
-        tower_http::cors::CorsLayer::new()
-            .allow_methods([
-                Method::GET,
-                Method::POST,
-                Method::PUT,
-                Method::PATCH,
-                Method::DELETE,
-                Method::OPTIONS,
-            ])
-            .allow_origin(Any)
-            .allow_headers(Any),
-    );
+    let app = Router::new()
+        .route("/submit/:id", post(post_run))
+        .route("/scores/:id", get(get_scores))
+        .layer(
+            tower_http::cors::CorsLayer::new()
+                .allow_methods([
+                    Method::GET,
+                    Method::POST,
+                    Method::PUT,
+                    Method::PATCH,
+                    Method::DELETE,
+                    Method::OPTIONS,
+                ])
+                .allow_origin(Any)
+                .allow_headers(Any),
+        );
 
     info!("Starting server");
     axum::Server::bind(&format!("0.0.0.0:{}", port).parse().unwrap())
@@ -102,4 +113,14 @@ async fn get_scores(extract::Path(id): extract::Path<String>) -> impl IntoRespon
     };
 
     (StatusCode::OK, serde_json::to_string(&scores).unwrap())
+}
+
+async fn post_run(extract::Path(id): extract::Path<String>, body: String) -> impl IntoResponse {
+    debug!("Post Run for challenge {}", id);
+
+    debug!("body: {}", body);
+    let run: Submission = serde_json::from_str(&body).unwrap();
+    debug!("Run: {:?}", run);
+    let res = run.run();
+    (StatusCode::OK, serde_json::to_string(&res).unwrap())
 }

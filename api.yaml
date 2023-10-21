@@ -47,8 +47,52 @@ paths:
                   $ref: '#/components/schemas/Score'
 
 
+  /submit/{challenge}:
+    post:
+      summary: Submit a run
+      operationId: submitRun
+      tags:
+        - run
+      parameters:
+        - name: challenge
+          in: path
+          description: Challenge name
+          required: true
+          schema:
+            type: string
+          example: "23_3_1"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Submit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Score'
+
 components:
   schemas:
+    Submit: 
+      type: object
+      properties:
+        player:
+          type: string
+        name:
+          type: string
+        language:
+          type: string
+        code:
+          type: string
+        test:
+          type: boolean
+
+    
     Score:
       type: object
       properties:
