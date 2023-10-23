@@ -3,8 +3,6 @@ name = "challenge_server"
 version = "2.0.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 log = "0.4.17"
 simple_logger = "4.2.0"
@@ -19,5 +17,4 @@ rand = "0.8.4"
 lazy_static = "1.4.0"
 tower-service = "0.3.2"
 envcrypt = "0.5.0"
-
-scoreboard_db = { path = "../scoreboard_db", features = ["database"]}
+scoreboard_db = { version = "0.2.1", features = ["database"]}
