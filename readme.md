@@ -1,6 +1,6 @@
 ![MIT license](https://img.shields.io/github/license/bitbrain-za/challenge-backend)
 [![dependency status](https://deps.rs/repo/github/bitbrain-za/challenge-backend/status.svg)](https://deps.rs/repo/github/bitbrain-za/challenge-backend)
-[![Continuous integration](https://github.com/bitbrain-za/challenge-backend/actions/workflows/rust.yml/badge.svg?branch=main)](https://github.com/bitbrain-za/challenge-backend/actions/workflows/rust.yml)
+[![Continuous integration](https://github.com/bitbrain-za/challenge-backend/actions/workflows/rust.yml/badge.svg)](https://github.com/bitbrain-za/challenge-backend/actions/workflows/rust.yml)
 
 # Challenge Backend
 
