@@ -1,18 +1,27 @@
-use axum::{
-    extract,
-    http::StatusCode,
-    response::IntoResponse,
-    routing::{get, post},
-    Router,
-};
-use envcrypt::option_envc;
-use http::Method;
-use log::{debug, error, info, LevelFilter};
-use scoreboard_db::{Db, Score};
-use simple_logger::SimpleLogger;
-use tower_http::cors::Any;
+mod config;
+mod handler;
+mod jwt_auth;
+mod login_handler;
+mod route;
 mod run;
-use run::Submission;
+mod user;
+use axum::http::{
+    header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE},
+    Method,
+};
+use config::Config;
+use envcrypt::option_envc;
+use log::{info, LevelFilter};
+use route::create_router;
+use simple_logger::SimpleLogger;
+use sqlx::{mysql::MySqlPoolOptions, MySql, Pool};
+use std::sync::Arc;
+use tower_http::cors::CorsLayer;
+
+pub struct AppState {
+    pub env: Config,
+    pub db: Pool<MySql>,
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -27,6 +36,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .init()
             .unwrap();
     }
+
+    let config = Config::init();
+
+    let pool = MySqlPoolOptions::new()
+        .max_connections(5)
+        .connect(config.db_url.as_str())
+        .await
+        .expect("Failed to connect to the DB");
+
     let args = std::env::args().collect::<Vec<String>>();
     let mut port = 3000;
     for (i, arg) in args.iter().enumerate() {
@@ -51,22 +69,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    let app = Router::new()
-        .route("/submit", post(post_run))
-        .route("/scores/:id", get(get_scores))
-        .layer(
-            tower_http::cors::CorsLayer::new()
-                .allow_methods([
-                    Method::GET,
-                    Method::POST,
-                    Method::PUT,
-                    Method::PATCH,
-                    Method::DELETE,
-                    Method::OPTIONS,
-                ])
-                .allow_origin(Any)
-                .allow_headers(Any),
-        );
+    let cors = CorsLayer::new()
+        .allow_methods([Method::GET, Method::POST, Method::PATCH, Method::DELETE])
+        .allow_credentials(true)
+        .allow_headers([AUTHORIZATION, ACCEPT, CONTENT_TYPE]);
+
+    let app = create_router(Arc::new(AppState {
+        db: pool.clone(),
+        env: config.clone(),
+    }))
+    .layer(cors);
 
     info!("Starting server");
     axum::Server::bind(&format!("0.0.0.0:{}", port).parse().unwrap())
@@ -75,49 +87,4 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .unwrap();
 
     Ok(())
-}
-
-async fn get_scores(extract::Path(id): extract::Path<String>) -> impl IntoResponse {
-    const MAX_SCORES: Option<usize> = Some(1000);
-    debug!("get Scores");
-    let db_pass = match option_env!("DB_PASSWORD") {
-        Some(pass) => pass,
-        None => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "This program needs to be compiled with the $DB_PASSWORD env variable set"
-                    .to_string(),
-            )
-        }
-    };
-
-    let mut db = match Db::new("localhost", 3306, "code_challenge", db_pass, &id) {
-        Ok(db) => db,
-        Err(e) => {
-            error!("Failed to connect to database: {}", e);
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Failed to connect to database".to_string(),
-            );
-        }
-    };
-    let scores: Vec<Score> = match db.get_scores(MAX_SCORES) {
-        Ok(s) => s,
-        Err(e) => {
-            error!("Failed to get scores: {}", e);
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Failed to get scores".to_string(),
-            );
-        }
-    };
-
-    (StatusCode::OK, serde_json::to_string(&scores).unwrap())
-}
-
-async fn post_run(body: String) -> impl IntoResponse {
-    let run: Submission = serde_json::from_str(&body).unwrap();
-    // debug!("Run: {:?}", run);
-    let res = run.run();
-    (StatusCode::OK, serde_json::to_string(&res).unwrap())
 }
