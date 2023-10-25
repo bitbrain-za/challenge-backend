@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 #[allow(non_snake_case)]
 #[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
 pub struct User {
-    pub id: i32,
+    pub id: i64,
     pub name: String,
     pub email: String,
     pub password: String,

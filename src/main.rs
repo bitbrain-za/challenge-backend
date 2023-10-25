@@ -4,6 +4,7 @@ mod jwt_auth;
 mod login_handler;
 mod route;
 mod run;
+mod token;
 mod user;
 use axum::http::{
     header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE, ORIGIN},
@@ -12,6 +13,7 @@ use axum::http::{
 use config::Config;
 use envcrypt::option_envc;
 use log::{info, LevelFilter};
+use redis::Client;
 use route::create_router;
 use simple_logger::SimpleLogger;
 use sqlx::{mysql::MySqlPoolOptions, MySql, Pool};
@@ -19,8 +21,9 @@ use std::sync::Arc;
 use tower_http::cors::CorsLayer;
 
 pub struct AppState {
-    pub env: Config,
-    pub db: Pool<MySql>,
+    env: Config,
+    db: Pool<MySql>,
+    redis_client: Client,
 }
 
 #[tokio::main]
@@ -69,6 +72,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
+    let redis_client = match Client::open(config.redis_url.to_owned()) {
+        Ok(client) => {
+            println!("✅Connection to the redis is successful!");
+            client
+        }
+        Err(e) => {
+            println!("🔥 Error connecting to Redis: {}", e);
+            std::process::exit(1);
+        }
+    };
+
     let url = format!("0.0.0.0:{}", port);
     let cors = CorsLayer::new()
         .allow_methods([Method::GET, Method::POST, Method::PATCH, Method::DELETE])
@@ -80,6 +94,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app = create_router(Arc::new(AppState {
         db: pool.clone(),
         env: config.clone(),
+        redis_client: redis_client.clone(),
     }))
     .layer(cors);
 

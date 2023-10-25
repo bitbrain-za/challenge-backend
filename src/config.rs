@@ -4,25 +4,59 @@ use envcrypt::option_envc;
 pub struct Config {
     pub db_password: String,
     pub db_url: String,
-    pub jwt_secret: String,
-    pub jwt_expires_in: String,
-    pub jwt_maxage: i32,
+    pub redis_url: String,
+    pub client_origin: String,
+
+    pub access_token_private_key: String,
+    pub access_token_public_key: String,
+    pub access_token_expires_in: String,
+    pub access_token_max_age: i64,
+
+    pub refresh_token_private_key: String,
+    pub refresh_token_public_key: String,
+    pub refresh_token_expires_in: String,
+    pub refresh_token_max_age: i64,
 }
 
 impl Config {
     pub fn init() -> Config {
         let db_password = option_envc!("DB_PASSWORD").unwrap().to_string();
         let db_url = option_envc!("DATABASE_URL").unwrap().to_string();
-        let jwt_secret = option_envc!("JWT_SECRET").unwrap().into();
-        let jwt_expires_in = option_envc!("JWT_EXPIRED_IN").unwrap().into();
-        let jwt_maxage = option_envc!("JWT_MAXAGE").unwrap();
+
+        let client_origin = option_envc!("CLIENT_ORIGIN").unwrap().into();
+        let redis_url = option_envc!("REDIS_URL").unwrap().into();
+
+        let access_token_private_key = option_envc!("ACCESS_TOKEN_PRIVATE_KEY").unwrap().into();
+        let access_token_public_key = option_envc!("ACCESS_TOKEN_PUBLIC_KEY").unwrap().into();
+        let access_token_expires_in = option_envc!("ACCESS_TOKEN_EXPIRES_IN").unwrap().into();
+        let access_token_max_age = option_envc!("ACCESS_TOKEN_MAXAGE")
+            .unwrap()
+            .parse::<i64>()
+            .unwrap();
+
+        let refresh_token_private_key = option_envc!("REFRESH_TOKEN_PRIVATE_KEY").unwrap().into();
+        let refresh_token_public_key = option_envc!("REFRESH_TOKEN_PUBLIC_KEY").unwrap().into();
+        let refresh_token_expires_in = option_envc!("REFRESH_TOKEN_EXPIRES_IN").unwrap().into();
+        let refresh_token_max_age = option_envc!("REFRESH_TOKEN_MAXAGE")
+            .unwrap()
+            .parse::<i64>()
+            .unwrap();
 
         Config {
+            client_origin,
             db_password,
             db_url,
-            jwt_secret,
-            jwt_expires_in,
-            jwt_maxage: jwt_maxage.parse::<i32>().unwrap(),
+            redis_url,
+
+            access_token_private_key,
+            access_token_public_key,
+            access_token_expires_in,
+            access_token_max_age,
+
+            refresh_token_private_key,
+            refresh_token_public_key,
+            refresh_token_expires_in,
+            refresh_token_max_age,
         }
     }
 }

@@ -9,18 +9,22 @@ use axum::{
 };
 
 use axum_extra::extract::cookie::CookieJar;
-use jsonwebtoken::{decode, DecodingKey, Validation};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-use crate::{
-    user::{TokenClaims, User},
-    AppState,
-};
+use crate::{token, user::User, AppState};
+
+use redis::AsyncCommands;
 
 #[derive(Debug, Serialize)]
 pub struct ErrorResponse {
     pub status: &'static str,
     pub message: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct JWTAuthMiddleware {
+    pub user: User,
+    pub access_token_uuid: uuid::Uuid,
 }
 
 pub async fn auth<B>(
@@ -29,9 +33,8 @@ pub async fn auth<B>(
     mut req: Request<B>,
     next: Next<B>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<ErrorResponse>)> {
-    //TODO probably an idea to remove cookies
-    let token = cookie_jar
-        .get("token")
+    let access_token = cookie_jar
+        .get("access_token")
         .map(|cookie| cookie.value().to_string())
         .or_else(|| {
             req.headers()
@@ -44,57 +47,88 @@ pub async fn auth<B>(
                 })
         });
 
-    let token = token.ok_or_else(|| {
-        let json_error = ErrorResponse {
+    let access_token = access_token.ok_or_else(|| {
+        let error_response = ErrorResponse {
             status: "fail",
             message: "You are not logged in, please provide token".to_string(),
         };
-        (StatusCode::UNAUTHORIZED, Json(json_error))
+        (StatusCode::UNAUTHORIZED, Json(error_response))
     })?;
 
-    let claims = decode::<TokenClaims>(
-        &token,
-        &DecodingKey::from_secret(data.env.jwt_secret.as_ref()),
-        &Validation::default(),
-    )
-    .map_err(|_| {
-        let json_error = ErrorResponse {
-            status: "fail",
-            message: "Invalid token".to_string(),
+    let access_token_details =
+        match token::verify_jwt_token(data.env.access_token_public_key.to_owned(), &access_token) {
+            Ok(token_details) => token_details,
+            Err(e) => {
+                let error_response = ErrorResponse {
+                    status: "fail",
+                    message: format!("{:?}", e),
+                };
+                return Err((StatusCode::UNAUTHORIZED, Json(error_response)));
+            }
         };
-        (StatusCode::UNAUTHORIZED, Json(json_error))
-    })?
-    .claims;
 
-    let user_id: u32 = claims.sub.parse().map_err(|_| {
-        let json_error = ErrorResponse {
+    let access_token_uuid = uuid::Uuid::parse_str(&access_token_details.token_uuid.to_string())
+        .map_err(|_| {
+            let error_response = ErrorResponse {
+                status: "fail",
+                message: "Invalid token".to_string(),
+            };
+            (StatusCode::UNAUTHORIZED, Json(error_response))
+        })?;
+
+    let mut redis_client = data
+        .redis_client
+        .get_async_connection()
+        .await
+        .map_err(|e| {
+            let error_response = ErrorResponse {
+                status: "error",
+                message: format!("Redis error: {}", e),
+            };
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
+        })?;
+
+    let redis_token_user_id = redis_client
+        .get::<_, String>(access_token_uuid.clone().to_string())
+        .await
+        .map_err(|_| {
+            let error_response = ErrorResponse {
+                status: "error",
+                message: "Token is invalid or session has expired".to_string(),
+            };
+            (StatusCode::UNAUTHORIZED, Json(error_response))
+        })?;
+
+    let user_id = redis_token_user_id.parse::<i64>().map_err(|_| {
+        let error_response = ErrorResponse {
             status: "fail",
-            message: "Invalid token".to_string(),
+            message: "Token is invalid or session has expired".to_string(),
         };
-        (StatusCode::UNAUTHORIZED, Json(json_error))
+        (StatusCode::UNAUTHORIZED, Json(error_response))
     })?;
 
     let user = sqlx::query_as!(User, "SELECT * FROM users WHERE id = ?", user_id)
         .fetch_optional(&data.db)
         .await
         .map_err(|e| {
-            let json_error = ErrorResponse {
+            let error_response = ErrorResponse {
                 status: "fail",
                 message: format!("Error fetching user from database: {}", e),
             };
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(json_error))
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
         })?;
 
     let user = user.ok_or_else(|| {
-        let json_error = ErrorResponse {
+        let error_response = ErrorResponse {
             status: "fail",
             message: "The user belonging to this token no longer exists".to_string(),
         };
-        (StatusCode::UNAUTHORIZED, Json(json_error))
+        (StatusCode::UNAUTHORIZED, Json(error_response))
     })?;
 
-    // insert the user into the request extensions so it can be accessed by other handlers
-    req.extensions_mut().insert(user);
-    // continue handling the request
+    req.extensions_mut().insert(JWTAuthMiddleware {
+        user,
+        access_token_uuid,
+    });
     Ok(next.run(req).await)
 }

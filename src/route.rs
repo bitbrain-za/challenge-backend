@@ -1,7 +1,9 @@
 use std::sync::Arc;
 
 use crate::handler::{get_scores, post_run};
-use crate::login_handler::{login_user_handler, logout_handler, register_user_handler};
+use crate::login_handler::{
+    login_user_handler, logout_handler, refresh_access_token_handler, register_user_handler,
+};
 
 use crate::jwt_auth::auth;
 use crate::AppState;
@@ -16,6 +18,7 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
     Router::new()
         .route("/api/auth/register", post(register_user_handler))
         .route("/api/auth/login", post(login_user_handler))
+        .route("/api/auth/refresh", get(refresh_access_token_handler))
         .route(
             "/api/auth/logout",
             get(logout_handler)

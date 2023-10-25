@@ -7,14 +7,18 @@
 Provides a backend interface to the DB.
 Just has one endpoint to fetch the scores for a challenge
 
-See api.yaml for more info.
+See api.json for more info. (api.yaml might also be up to date)
 
 # Deploying
+
+Install [Redis](https://redis.io/docs/install/install-redis/install-redis-on-linux/)
 
 move (host) target/release/challenge_server to (target) /usr/bin/challenge_server
 move (host) sysvinit/challenge_server to (target) /etc/init.d/challenge_server
 
 `service start challenge_server`
+
+install mysql and redis
 
 # Configuring
 Use `-P 1234` to set the port to 1234
