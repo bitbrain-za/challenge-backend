@@ -1,0 +1,91 @@
+{
+    "client": "Thunder Client",
+    "collectionName": "Challenge Server",
+    "dateExported": "2023-10-24T19:30:55.981Z",
+    "version": "1.1",
+    "folders": [
+        {
+            "_id": "c5f4977b-071e-4185-91a9-52c730cc84be",
+            "name": "Auth",
+            "containerId": "",
+            "created": "2023-10-24T12:54:55.071Z",
+            "sortNum": 10000
+        },
+        {
+            "_id": "6c5f4157-3a0b-4124-b87f-8f1eeebd2779",
+            "name": "User",
+            "containerId": "",
+            "created": "2023-10-24T12:54:55.072Z",
+            "sortNum": 20000
+        }
+    ],
+    "requests": [
+        {
+            "_id": "b352c30d-8a45-4490-995d-e07a4ce16961",
+            "colId": "fd333b06-0043-4af6-8bcb-25cded7b7c55",
+            "containerId": "c5f4977b-071e-4185-91a9-52c730cc84be",
+            "name": "Register",
+            "url": "http://localhost:4001/api/auth/register",
+            "method": "POST",
+            "sortNum": 10000,
+            "created": "2023-10-24T12:54:55.071Z",
+            "modified": "2023-10-24T12:57:21.537Z",
+            "headers": [],
+            "params": [],
+            "body": {
+                "type": "json",
+                "raw": "{\n    \"email\": \"admin@admin.com\",\n    \"name\": \"Admin\",\n    \"password\": \"password123\",\n    \"passwordConfirm\": \"password123\"\n}",
+                "form": []
+            },
+            "tests": []
+        },
+        {
+            "_id": "ec1b8b58-d660-4c07-b3b2-a9a76d9ac091",
+            "colId": "fd333b06-0043-4af6-8bcb-25cded7b7c55",
+            "containerId": "c5f4977b-071e-4185-91a9-52c730cc84be",
+            "name": "Logout",
+            "url": "http://localhost:8000/api/auth/logout",
+            "method": "GET",
+            "sortNum": 20000,
+            "created": "2023-10-24T12:54:55.072Z",
+            "modified": "2023-10-24T12:54:55.072Z",
+            "headers": []
+        },
+        {
+            "_id": "071b4143-3c1f-46fa-af21-68013764d37c",
+            "colId": "fd333b06-0043-4af6-8bcb-25cded7b7c55",
+            "containerId": "c5f4977b-071e-4185-91a9-52c730cc84be",
+            "name": "Login",
+            "url": "http://localhost:4001/api/auth/login",
+            "method": "POST",
+            "sortNum": 30000,
+            "created": "2023-10-24T12:54:55.073Z",
+            "modified": "2023-10-24T12:58:46.227Z",
+            "headers": [],
+            "params": [],
+            "body": {
+                "type": "json",
+                "raw": "{\n    \"email\": \"admin@admin.com\",\n    \"password\": \"password123\"\n}",
+                "form": []
+            },
+            "tests": []
+        },
+        {
+            "_id": "66d26818-deca-443a-a71e-bb795296c35d",
+            "colId": "fd333b06-0043-4af6-8bcb-25cded7b7c55",
+            "containerId": "6c5f4157-3a0b-4124-b87f-8f1eeebd2779",
+            "name": "Get Me",
+            "url": "http://localhost:4001/api/users/me",
+            "method": "GET",
+            "sortNum": 40000,
+            "created": "2023-10-24T12:54:55.074Z",
+            "modified": "2023-10-24T12:56:57.091Z",
+            "headers": [],
+            "params": [],
+            "auth": {
+                "type": "none"
+            },
+            "tests": []
+        }
+    ]
+}

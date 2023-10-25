@@ -6,8 +6,8 @@ mod route;
 mod run;
 mod user;
 use axum::http::{
-    header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE},
-    Method,
+    header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE, ORIGIN},
+    HeaderValue, Method,
 };
 use config::Config;
 use envcrypt::option_envc;
@@ -69,10 +69,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
+    let url = format!("0.0.0.0:{}", port);
     let cors = CorsLayer::new()
         .allow_methods([Method::GET, Method::POST, Method::PATCH, Method::DELETE])
+        //TODO review this
         .allow_credentials(true)
-        .allow_headers([AUTHORIZATION, ACCEPT, CONTENT_TYPE]);
+        .allow_origin(url.parse::<HeaderValue>().unwrap())
+        .allow_headers([AUTHORIZATION, ACCEPT, CONTENT_TYPE, ORIGIN]);
 
     let app = create_router(Arc::new(AppState {
         db: pool.clone(),
@@ -81,7 +84,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     .layer(cors);
 
     info!("Starting server");
-    axum::Server::bind(&format!("0.0.0.0:{}", port).parse().unwrap())
+    axum::Server::bind(&url.parse().unwrap())
         .serve(app.into_make_service())
         .await
         .unwrap();

@@ -22,9 +22,9 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
                 .route_layer(middleware::from_fn_with_state(app_state.clone(), auth)),
         )
         .route(
-            "/submit",
+            "/api/game/submit",
             post(post_run).route_layer(middleware::from_fn_with_state(app_state.clone(), auth)),
         )
-        .route("/scores/:id", get(get_scores))
+        .route("/api/game/scores/:id", get(get_scores))
         .with_state(app_state)
 }
