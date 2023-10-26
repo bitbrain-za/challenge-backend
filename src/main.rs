@@ -8,7 +8,7 @@ mod token;
 mod user;
 use axum::http::{
     header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE, ORIGIN},
-    HeaderValue, Method,
+    Method,
 };
 use config::Config;
 use envcrypt::option_envc;
@@ -83,12 +83,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    let url = format!("0.0.0.0:{}", port);
+    let url = format!("127.0.0.1:{}", port);
+    let origins = [
+        "http://localhost:8080".parse()?,
+        config.client_origin.as_str().parse()?,
+    ];
     let cors = CorsLayer::new()
         .allow_methods([Method::GET, Method::POST, Method::PATCH, Method::DELETE])
-        //TODO review this
         .allow_credentials(true)
-        .allow_origin(url.parse::<HeaderValue>().unwrap())
+        .allow_origin(origins)
         .allow_headers([AUTHORIZATION, ACCEPT, CONTENT_TYPE, ORIGIN]);
 
     let app = create_router(Arc::new(AppState {
