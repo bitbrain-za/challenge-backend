@@ -12,6 +12,7 @@ use axum::http::{
 };
 use config::Config;
 use envcrypt::option_envc;
+use http::header::{COOKIE, SET_COOKIE};
 use log::{info, LevelFilter};
 use redis::Client;
 use route::create_router;
@@ -92,7 +93,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .allow_methods([Method::GET, Method::POST, Method::PATCH, Method::DELETE])
         .allow_credentials(true)
         .allow_origin(origins)
-        .allow_headers([AUTHORIZATION, ACCEPT, CONTENT_TYPE, ORIGIN]);
+        .allow_headers([
+            AUTHORIZATION,
+            ACCEPT,
+            COOKIE,
+            SET_COOKIE,
+            CONTENT_TYPE,
+            ORIGIN,
+        ]);
 
     let app = create_router(Arc::new(AppState {
         db: pool.clone(),

@@ -111,15 +111,19 @@ pub async fn login_user_handler(
     .await
     .map_err(|e| {
         let error_response = serde_json::json!({
-            "status": "error",
-            "message": format!("Database error: {}", e),
+            "Failure":  {
+                "status": "error",
+                "message": format!("Database error: {}", e)
+            }
         });
         (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
     })?
     .ok_or_else(|| {
         let error_response = serde_json::json!({
-            "status": "fail",
-            "message": "Invalid email or password",
+            "Failure": {
+                "status": "fail",
+                "message": "Invalid email or password"
+            }
         });
         (StatusCode::BAD_REQUEST, Json(error_response))
     })?;
@@ -133,8 +137,10 @@ pub async fn login_user_handler(
 
     if !is_valid {
         let error_response = serde_json::json!({
-            "status": "fail",
-            "message": "Invalid email or password"
+            "Failure": {
+                "status": "fail",
+                "message": "Invalid email or password"
+            }
         });
         return Err((StatusCode::BAD_REQUEST, Json(error_response)));
     }
@@ -164,7 +170,7 @@ pub async fn login_user_handler(
     )
     .path("/")
     .max_age(time::Duration::minutes(data.env.access_token_max_age * 60))
-    .same_site(SameSite::Lax)
+    .same_site(SameSite::Strict)
     .http_only(true)
     .finish();
     let refresh_cookie = Cookie::build(
@@ -173,20 +179,26 @@ pub async fn login_user_handler(
     )
     .path("/")
     .max_age(time::Duration::minutes(data.env.refresh_token_max_age * 60))
-    .same_site(SameSite::Lax)
+    .same_site(SameSite::None)
     .http_only(true)
     .finish();
 
     let logged_in_cookie = Cookie::build("logged_in", "true")
+        .domain("localhost")
         .path("/")
-        .max_age(time::Duration::minutes(data.env.access_token_max_age * 60))
-        .same_site(SameSite::Lax)
-        .http_only(false)
+        .secure(false)
+        .same_site(SameSite::None)
+        .http_only(true)
         .finish();
 
     let mut response = Response::new(
-        json!({"status": "success", "access_token": access_token_details.token.unwrap()})
-            .to_string(),
+        json!({
+            "Success": {
+                "status": "success",
+                "access_token": access_token_details.token.unwrap()
+            }
+        })
+        .to_string(),
     );
     let mut headers = HeaderMap::new();
     headers.append(
@@ -201,6 +213,8 @@ pub async fn login_user_handler(
         header::SET_COOKIE,
         logged_in_cookie.to_string().parse().unwrap(),
     );
+
+    headers.append(header::SET_COOKIE, "test=1".to_string().parse().unwrap());
 
     response.headers_mut().extend(headers);
     Ok(response)
