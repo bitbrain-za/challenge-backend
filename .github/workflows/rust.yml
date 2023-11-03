@@ -18,6 +18,21 @@ jobs:
     env:
       DATABASE_URL: "mysql://root:root@localhost:3306/test"
     steps:
+      - name: Setup DB
+        run: |
+          sudo apt-get install -y mysql-client
+          mysql --host 127.0.0.1 --port 3306 -uroot -proot -e "
+          CREATE TABLE
+              test.users (
+                  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                  name CHAR(100) NOT NULL,
+                  email VARCHAR(255) NOT NULL UNIQUE,
+                  verified BOOLEAN NOT NULL DEFAULT FALSE,
+                  password VARCHAR(100) NOT NULL,
+                  role VARCHAR(50) NOT NULL DEFAULT 'user'
+              );
+          CREATE INDEX users_email_idx ON test.users (email);
+          "
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
@@ -43,6 +58,21 @@ jobs:
     env:
       DATABASE_URL: "mysql://root:root@localhost:3306/test"
     steps:
+      - name: Setup DB
+        run: |
+          sudo apt-get install -y mysql-client
+          mysql --host 127.0.0.1 --port 3306 -uroot -proot -e "
+          CREATE TABLE
+              test.users (
+                  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                  name CHAR(100) NOT NULL,
+                  email VARCHAR(255) NOT NULL UNIQUE,
+                  verified BOOLEAN NOT NULL DEFAULT FALSE,
+                  password VARCHAR(100) NOT NULL,
+                  role VARCHAR(50) NOT NULL DEFAULT 'user'
+              );
+          CREATE INDEX users_email_idx ON test.users (email);
+          "
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
