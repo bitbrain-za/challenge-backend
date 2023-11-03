@@ -62,7 +62,7 @@ pub async fn register_user_handler(
         })
         .map(|hash| hash.to_string())?;
 
-    let result = sqlx::query!(
+    sqlx::query!(
         "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
         body.name.to_string(),
         body.email.to_string().to_ascii_lowercase(),
@@ -78,22 +78,8 @@ pub async fn register_user_handler(
         (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
     })?;
 
-    let user_id = result.last_insert_id();
-
-    let user = sqlx::query_as!(User, "SELECT * FROM users WHERE id = ?", user_id)
-        .fetch_one(&data.db)
-        .await
-        .map_err(|e| {
-            let error_response = serde_json::json!({
-                "status": "fail",
-                "message": format!("Database error: {}", e),
-            });
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
-        })?;
-
-    let user_response = serde_json::json!({"status": "success","data": serde_json::json!({
-        "user": user
-    })});
+    let user_response =
+        serde_json::json!({"status": "success","message": "User created successfully"});
 
     Ok(Json(user_response))
 }
