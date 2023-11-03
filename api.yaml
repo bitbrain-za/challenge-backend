@@ -3,7 +3,7 @@ info:
   title: Challenge Backend
   version: "1.0"
 servers:
-  - url: http://{domain}:{port}
+  - url: http://{domain}:{port}/api
     variables:
       domain:
         default: localhost
@@ -12,17 +12,83 @@ servers:
           - '3000'
           - '8080'
         default: '3000'
-  - url: http://localhost:3000/
+  - url: http://localhost:3000/api
     description: Local test instance
-  - url: http://10.239.68.77:3000
+  - url: http://10.239.68.77:3000/api
     description: Playground Server
 
 security:
   - bearerAuth: []
 
 paths:
+  /auth/login:
+    post:
+      summary: Login
+      operationId: login
+      tags:
+        - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Login'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        "401":
+          $ref: "#/components/responses/API-401-RESPONSE"
 
-  /scores/{challenge}:
+  /auth/logout:
+    get:
+      summary: Logout
+      operationId: logout
+      tags:
+        - auth
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "Success"
+        "401":
+          $ref: "#/components/responses/API-401-RESPONSE"
+
+  /auth/register:
+    post:
+      summary: Register
+      operationId: register
+      tags:
+        - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Register'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+        "401":
+          $ref: "#/components/responses/API-401-RESPONSE"
+
+
+  /game/scores/{challenge}:
     get:
       summary: Get all scores
       operationId: getScores
@@ -47,7 +113,7 @@ paths:
                   $ref: '#/components/schemas/Score'
 
 
-  /submit:
+  /game/submit:
     post:
       summary: Submit a run
       operationId: submitRun
@@ -69,7 +135,54 @@ paths:
                   $ref: '#/components/schemas/Score'
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT 
+
   schemas:
+    Login:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+    
+    LoginResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        token:
+          type: string
+
+    Register:
+      type: object
+      properties:
+        email:
+          type: string
+        name:
+          type: string
+        password:
+          type: string
+        passwordConfirm:
+          type: string
+
+    RegisterRespnse:
+      type: object
+      properties:
+        status:
+          type: string
+        user:
+          type: object
+          properties:
+            email:
+              type: string
+            name:
+              type: string
+      
     Submit: 
       type: object
       properties:
@@ -85,7 +198,6 @@ components:
           type: string
         test:
           type: boolean
-
     
     Score:
       type: object
@@ -103,4 +215,11 @@ components:
         binary:
           type: string
 
-  
+  responses:
+    API-401-RESPONSE:
+      description: |-
+        __You are not authenticated.  We don't know who you are__
+          - During a request to `authn/token`, make sure that you are using the correct `client_id` and `client_secret`.
+          - During a request to `authn/token`, make sure that you include a header for Content-Type with `application/x-www-form-urlencoded`.
+          - During any other request, make sure that you have added the bearer token to the authorization header with the Content-Type header being added with the correct version value.
+          - Your access token might have expired.
