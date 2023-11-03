@@ -99,7 +99,7 @@ jobs:
                   password VARCHAR(100) NOT NULL,
                   role VARCHAR(50) NOT NULL DEFAULT 'user'
               );
-          CREATE INDEX users_email_idx ON users (email);
+          CREATE INDEX users_email_idx ON test.users (email);
           "
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
