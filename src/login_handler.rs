@@ -80,7 +80,7 @@ pub async fn register_user_handler(
 
     let user_id = result.last_insert_id();
 
-    let user = sqlx::query_as!(User, "SELECT * FROM users WHERE id = ?", user_id)
+    let _user = sqlx::query_as!(User, "SELECT * FROM users WHERE id = ?", user_id)
         .fetch_one(&data.db)
         .await
         .map_err(|e| {
@@ -91,9 +91,8 @@ pub async fn register_user_handler(
             (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
         })?;
 
-    let user_response = serde_json::json!({"status": "success","data": serde_json::json!({
-        "user": user
-    })});
+    let user_response =
+        serde_json::json!({"status": "success","message": "User created successfully"});
 
     Ok(Json(user_response))
 }
