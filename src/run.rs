@@ -1,5 +1,6 @@
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::prelude::*;
+use std::os::unix::prelude::PermissionsExt;
 
 #[derive(Default, Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Submission {
@@ -21,6 +22,13 @@ pub enum SubmissionResult {
 
 impl Submission {
     pub fn run(&self) -> SubmissionResult {
+        if self.binary.is_some() {
+            return self.run_binary();
+        }
+        self.run_script()
+    }
+
+    pub fn run_script(&self) -> SubmissionResult {
         match self.language.to_lowercase().as_str() {
             "python" => self.run_python(),
 
@@ -30,23 +38,77 @@ impl Submission {
         }
     }
 
-    fn run_python(&self) -> SubmissionResult {
-        let mut file = match File::create(format!("/tmp/2332/{}.py", self.filename)) {
-            Ok(f) => f,
-            Err(e) => {
-                return SubmissionResult::Failure {
-                    message: format!("Error creating file: {}", e),
+    pub fn run_binary(&self) -> SubmissionResult {
+        if let Err(e) = self.save_binary() {
+            return SubmissionResult::Failure {
+                message: format!("Error saving binary: {}", e),
+            };
+        }
+
+        log::debug!(
+            "Running binary: {} for challenge {}",
+            self.filename,
+            self.challenge.replace('_', "")
+        );
+
+        let output = match std::process::Command::new(
+            "/home/philip/code_challenges/workspace/target/debug/judge",
+        )
+        .arg("-C")
+        .arg(self.challenge.replace('_', ""))
+        .arg("-L")
+        .arg(self.language.to_lowercase())
+        .arg("-c")
+        .arg(format!("/tmp/code_challenge/{}", self.filename))
+        .arg("-t")
+        .output()
+        {
+            Ok(o) => {
+                if o.status.success() {
+                    SubmissionResult::Success {
+                        score: 0,
+                        message: String::from_utf8_lossy(&o.stdout).to_string(),
+                    }
+                } else {
+                    SubmissionResult::Failure {
+                        message: String::from_utf8_lossy(&o.stderr).to_string(),
+                    }
                 }
             }
+            Err(e) => SubmissionResult::Failure {
+                message: format!("Error running command: {}", e),
+            },
         };
-        match file.write_all(self.code.as_bytes()) {
-            Ok(_) => (),
-            Err(e) => {
-                return SubmissionResult::Failure {
-                    message: format!("Error writing to file: {}", e),
-                };
-            }
-        };
+        let _ = self.delete_file();
+        output
+    }
+
+    fn save_binary(&self) -> std::io::Result<()> {
+        fs::create_dir_all("/tmp/code_challenge")?;
+        let mut file = File::create(format!("/tmp/code_challenge/{}", self.filename))?;
+        file.write_all(self.binary.as_ref().unwrap())?;
+
+        let mut permissions = file.metadata()?.permissions();
+        permissions.set_mode(0o755);
+        file.set_permissions(permissions)
+    }
+
+    fn save_script(&self) -> std::io::Result<()> {
+        fs::create_dir_all("/tmp/code_challenge")?;
+        let mut file = File::create(format!("/tmp/code_challenge/{}", self.filename))?;
+        file.write_all(self.code.as_bytes())
+    }
+
+    fn delete_file(&self) -> std::io::Result<()> {
+        fs::remove_file(format!("/tmp/code_challenge/{}", self.filename))
+    }
+
+    fn run_python(&self) -> SubmissionResult {
+        if let Err(e) = self.save_script() {
+            return SubmissionResult::Failure {
+                message: format!("Error saving script: {}", e),
+            };
+        }
 
         let output = match std::process::Command::new(
             "/home/philip/code_challenges/workspace/target/debug/judge",
@@ -56,7 +118,7 @@ impl Submission {
         .arg("-L")
         .arg("python")
         .arg("-c")
-        .arg(format!("python3 /tmp/2332/{}.py", self.filename))
+        .arg(format!("python3 /tmp/code_challenge/{}", self.filename))
         .arg("-t")
         .output()
         {
