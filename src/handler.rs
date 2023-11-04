@@ -1,5 +1,5 @@
 use super::jwt_auth::JWTAuthMiddleware;
-use crate::run::{Submission, SubmissionBuilder, SubmissionResult};
+use crate::run::{Submission, SubmissionBuilder};
 use axum::{
     extract::{self, Multipart},
     http::StatusCode,
@@ -65,13 +65,15 @@ pub async fn post_binary(
     builder = builder.player(&state.user.name);
     while let Some(field) = multipart.next_field().await.unwrap() {
         let name = field.name().unwrap().to_string();
-        let data = field.bytes().await.unwrap();
 
         if name == "binary" {
+            let data = field.bytes().await.unwrap();
+            // debug!("Binary data: {:?}", data);
             builder = builder.binary(data.to_vec());
             continue;
         }
 
+        let data = field.bytes().await.unwrap();
         builder = match builder.set_field(&name, &String::from_utf8(data.to_vec()).unwrap()) {
             Ok(b) => b,
             Err(e) => {
@@ -83,12 +85,18 @@ pub async fn post_binary(
             }
         };
     }
-    let submission = builder.build();
-
-    debug!("Submission: {:?}", submission);
-
-    let res = SubmissionResult::Failure {
-        message: "Not yet implemented".to_string(),
+    let submission = match builder.build() {
+        Ok(s) => s,
+        Err(e) => {
+            error!("Failed to build submission: {}", e);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to build submission".to_string(),
+            );
+        }
     };
+
+    let res = submission.run();
+
     (StatusCode::OK, serde_json::to_string(&res).unwrap())
 }

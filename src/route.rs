@@ -7,12 +7,14 @@ use crate::login_handler::{
 
 use crate::jwt_auth::auth;
 use crate::AppState;
-
 use axum::{
+    extract::DefaultBodyLimit,
     middleware::{self},
     routing::{get, post},
     Router,
 };
+
+const CONTENT_LENGTH_LIMIT: usize = 20 * 1024 * 1024;
 
 pub fn create_router(app_state: Arc<AppState>) -> Router {
     Router::new()
@@ -37,5 +39,6 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
             "/api/game/binary",
             post(post_binary).route_layer(middleware::from_fn_with_state(app_state.clone(), auth)),
         )
+        .layer(DefaultBodyLimit::max(CONTENT_LENGTH_LIMIT))
         .with_state(app_state)
 }

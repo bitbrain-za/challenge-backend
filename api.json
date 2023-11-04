@@ -1,7 +1,7 @@
 {
     "client": "Thunder Client",
     "collectionName": "Challenge Server",
-    "dateExported": "2023-11-04T10:18:51.118Z",
+    "dateExported": "2023-11-04T12:55:44.113Z",
     "version": "1.1",
     "folders": [
         {
@@ -125,12 +125,12 @@
             "method": "POST",
             "sortNum": 60000,
             "created": "2023-10-25T10:42:26.094Z",
-            "modified": "2023-11-04T09:07:14.956Z",
+            "modified": "2023-11-04T11:43:01.527Z",
             "headers": [],
             "params": [],
             "body": {
                 "type": "json",
-                "raw": "{\n    \"player\": \"phil\",\n    \"name\": \"find_it\",\n    \"code\": \"exit\",\n    \"challenge\": \"23_3_1\",\n    \"language\": \"javascript\"\n}",
+                "raw": "{\n    \"filename\": \"find_it\",\n    \"code\": \"exit\",\n    \"challenge\": \"23_3_1\",\n    \"language\": \"javascript\"\n}",
                 "form": []
             },
             "tests": []
@@ -144,17 +144,13 @@
             "method": "POST",
             "sortNum": 70000,
             "created": "2023-11-04T08:48:58.033Z",
-            "modified": "2023-11-04T10:14:51.012Z",
+            "modified": "2023-11-04T11:41:26.887Z",
             "headers": [],
             "params": [],
             "body": {
                 "type": "formdata",
                 "raw": "",
                 "form": [
-                    {
-                        "name": "player",
-                        "value": "philip"
-                    },
                     {
                         "name": "language",
                         "value": "rust"
