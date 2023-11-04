@@ -1,5 +1,5 @@
-use crate::run::Submission;
-use axum::{extract, http::StatusCode, response::IntoResponse};
+use crate::run::{Submission, SubmissionResult};
+use axum::{body::Bytes, extract, http::StatusCode, response::IntoResponse};
 use log::{debug, error};
 use scoreboard_db::{Db, Score};
 
@@ -45,5 +45,14 @@ pub async fn post_run(body: String) -> impl IntoResponse {
     let run: Submission = serde_json::from_str(&body).unwrap();
     // debug!("Run: {:?}", run);
     let res = run.run();
+    (StatusCode::OK, serde_json::to_string(&res).unwrap())
+}
+
+pub async fn post_binary(body: Bytes) -> impl IntoResponse {
+    debug!("Binary: {:?}", body);
+
+    let res = SubmissionResult::Failure {
+        message: "Not yet implemented".to_string(),
+    };
     (StatusCode::OK, serde_json::to_string(&res).unwrap())
 }

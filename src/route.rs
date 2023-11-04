@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::handler::{get_scores, post_run};
+use crate::handler::{get_scores, post_binary, post_run};
 use crate::login_handler::{
     login_user_handler, logout_handler, refresh_access_token_handler, register_user_handler,
 };
@@ -32,6 +32,10 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
         .route(
             "/api/game/scores/:id",
             get(get_scores).route_layer(middleware::from_fn_with_state(app_state.clone(), auth)),
+        )
+        .route(
+            "/api/game/binary/:id",
+            post(post_binary).route_layer(middleware::from_fn_with_state(app_state.clone(), auth)),
         )
         .with_state(app_state)
 }
