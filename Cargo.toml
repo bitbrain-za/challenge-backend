@@ -1,6 +1,6 @@
 [package]
 name = "challenge_server"
-version = "2.2.0"
+version = "2.2.1"
 edition = "2021"
 
 [dependencies]
@@ -9,7 +9,7 @@ simple_logger = "4.2.0"
 tokio = { version = "1.33.0", features = ["full"] }
 tower-http = { version = "0.4.0", features = ["cors"] }
 http = "0.2.9"
-axum = "0.6.20"
+axum = { version = "0.6.20", features = ["multipart"] }
 axum-server = "0.5.1"
 axum-extra = { version = "0.8.0", features = ["cookie"] }
 serde = { version = "1.0.157", features = ["derive"] }

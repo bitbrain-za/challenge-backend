@@ -34,7 +34,7 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
             get(get_scores).route_layer(middleware::from_fn_with_state(app_state.clone(), auth)),
         )
         .route(
-            "/api/game/binary/:id",
+            "/api/game/binary",
             post(post_binary).route_layer(middleware::from_fn_with_state(app_state.clone(), auth)),
         )
         .with_state(app_state)

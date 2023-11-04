@@ -1,5 +1,9 @@
-use crate::run::{Submission, SubmissionResult};
-use axum::{body::Bytes, extract, http::StatusCode, response::IntoResponse};
+use crate::run::{Submission, SubmissionBuilder, SubmissionResult};
+use axum::{
+    extract::{self, Multipart},
+    http::StatusCode,
+    response::IntoResponse,
+};
 use log::{debug, error};
 use scoreboard_db::{Db, Score};
 
@@ -43,13 +47,35 @@ pub async fn get_scores(extract::Path(id): extract::Path<String>) -> impl IntoRe
 
 pub async fn post_run(body: String) -> impl IntoResponse {
     let run: Submission = serde_json::from_str(&body).unwrap();
-    // debug!("Run: {:?}", run);
     let res = run.run();
     (StatusCode::OK, serde_json::to_string(&res).unwrap())
 }
 
-pub async fn post_binary(body: Bytes) -> impl IntoResponse {
-    debug!("Binary: {:?}", body);
+pub async fn post_binary(mut multipart: Multipart) -> impl IntoResponse {
+    let mut builder = SubmissionBuilder::new();
+    while let Some(field) = multipart.next_field().await.unwrap() {
+        let name = field.name().unwrap().to_string();
+        let data = field.bytes().await.unwrap();
+
+        if name == "binary" {
+            builder = builder.binary(data.to_vec());
+            continue;
+        }
+
+        builder = match builder.set_field(name, String::from_utf8(data.to_vec()).unwrap()) {
+            Ok(b) => b,
+            Err(e) => {
+                error!("Failed to set field: {}", e);
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Failed to set field".to_string(),
+                );
+            }
+        };
+    }
+    let submission = builder.build();
+
+    debug!("Submission: {:?}", submission);
 
     let res = SubmissionResult::Failure {
         message: "Not yet implemented".to_string(),

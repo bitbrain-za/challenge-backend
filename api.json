@@ -1,35 +1,42 @@
 {
     "client": "Thunder Client",
     "collectionName": "Challenge Server",
-    "dateExported": "2023-10-24T19:30:55.981Z",
+    "dateExported": "2023-11-04T10:18:51.118Z",
     "version": "1.1",
     "folders": [
         {
-            "_id": "c5f4977b-071e-4185-91a9-52c730cc84be",
+            "_id": "d02c0701-ae70-492a-930b-651f06ec4ee3",
             "name": "Auth",
             "containerId": "",
-            "created": "2023-10-24T12:54:55.071Z",
+            "created": "2023-10-25T10:40:41.094Z",
             "sortNum": 10000
         },
         {
-            "_id": "6c5f4157-3a0b-4124-b87f-8f1eeebd2779",
+            "_id": "7f16d6b6-4c44-42da-9d55-5c25dff22bc0",
             "name": "User",
             "containerId": "",
-            "created": "2023-10-24T12:54:55.072Z",
+            "created": "2023-10-25T10:40:41.095Z",
             "sortNum": 20000
+        },
+        {
+            "_id": "3a178720-3e44-4d1a-8336-edfc013c5745",
+            "name": "Game",
+            "containerId": "",
+            "created": "2023-10-25T10:42:11.161Z",
+            "sortNum": 30000
         }
     ],
     "requests": [
         {
-            "_id": "b352c30d-8a45-4490-995d-e07a4ce16961",
-            "colId": "fd333b06-0043-4af6-8bcb-25cded7b7c55",
-            "containerId": "c5f4977b-071e-4185-91a9-52c730cc84be",
+            "_id": "7146de98-32ec-472b-92ef-eec7f99faae9",
+            "colId": "5d762d29-c16a-4b12-a458-88e9ba10a110",
+            "containerId": "d02c0701-ae70-492a-930b-651f06ec4ee3",
             "name": "Register",
-            "url": "http://localhost:4001/api/auth/register",
+            "url": "http://localhost:3000/api/auth/register",
             "method": "POST",
             "sortNum": 10000,
-            "created": "2023-10-24T12:54:55.071Z",
-            "modified": "2023-10-24T12:57:21.537Z",
+            "created": "2023-10-25T10:40:41.094Z",
+            "modified": "2023-10-25T10:42:47.661Z",
             "headers": [],
             "params": [],
             "body": {
@@ -40,27 +47,29 @@
             "tests": []
         },
         {
-            "_id": "ec1b8b58-d660-4c07-b3b2-a9a76d9ac091",
-            "colId": "fd333b06-0043-4af6-8bcb-25cded7b7c55",
-            "containerId": "c5f4977b-071e-4185-91a9-52c730cc84be",
+            "_id": "16e51dc3-6e92-4a54-8ca0-c567334a6efd",
+            "colId": "5d762d29-c16a-4b12-a458-88e9ba10a110",
+            "containerId": "d02c0701-ae70-492a-930b-651f06ec4ee3",
             "name": "Logout",
-            "url": "http://localhost:8000/api/auth/logout",
+            "url": "http://localhost:3000/api/auth/logout",
             "method": "GET",
             "sortNum": 20000,
-            "created": "2023-10-24T12:54:55.072Z",
-            "modified": "2023-10-24T12:54:55.072Z",
-            "headers": []
+            "created": "2023-10-25T10:40:41.095Z",
+            "modified": "2023-10-25T10:43:14.905Z",
+            "headers": [],
+            "params": [],
+            "tests": []
         },
         {
-            "_id": "071b4143-3c1f-46fa-af21-68013764d37c",
-            "colId": "fd333b06-0043-4af6-8bcb-25cded7b7c55",
-            "containerId": "c5f4977b-071e-4185-91a9-52c730cc84be",
+            "_id": "0e02b8b2-7fde-475c-be20-fc27fb1fbfbc",
+            "colId": "5d762d29-c16a-4b12-a458-88e9ba10a110",
+            "containerId": "d02c0701-ae70-492a-930b-651f06ec4ee3",
             "name": "Login",
-            "url": "http://localhost:4001/api/auth/login",
+            "url": "http://localhost:3000/api/auth/login",
             "method": "POST",
             "sortNum": 30000,
-            "created": "2023-10-24T12:54:55.073Z",
-            "modified": "2023-10-24T12:58:46.227Z",
+            "created": "2023-10-25T10:40:41.096Z",
+            "modified": "2023-10-25T11:27:06.576Z",
             "headers": [],
             "params": [],
             "body": {
@@ -71,19 +80,104 @@
             "tests": []
         },
         {
-            "_id": "66d26818-deca-443a-a71e-bb795296c35d",
-            "colId": "fd333b06-0043-4af6-8bcb-25cded7b7c55",
-            "containerId": "6c5f4157-3a0b-4124-b87f-8f1eeebd2779",
+            "_id": "c7ad210e-2757-4221-8101-c9d070d22520",
+            "colId": "5d762d29-c16a-4b12-a458-88e9ba10a110",
+            "containerId": "7f16d6b6-4c44-42da-9d55-5c25dff22bc0",
             "name": "Get Me",
             "url": "http://localhost:4001/api/users/me",
             "method": "GET",
             "sortNum": 40000,
-            "created": "2023-10-24T12:54:55.074Z",
-            "modified": "2023-10-24T12:56:57.091Z",
+            "created": "2023-10-25T10:40:41.097Z",
+            "modified": "2023-10-25T10:40:41.097Z",
             "headers": [],
             "params": [],
             "auth": {
                 "type": "none"
+            },
+            "tests": []
+        },
+        {
+            "_id": "c8034844-56e5-42ff-adcc-4a2fc75d3038",
+            "colId": "5d762d29-c16a-4b12-a458-88e9ba10a110",
+            "containerId": "3a178720-3e44-4d1a-8336-edfc013c5745",
+            "name": "Get Scores",
+            "url": "http://localhost:3000/api/game/scores/{id}",
+            "method": "GET",
+            "sortNum": 50000,
+            "created": "2023-10-25T10:42:18.060Z",
+            "modified": "2023-10-25T11:24:27.961Z",
+            "headers": [],
+            "params": [
+                {
+                    "name": "id",
+                    "value": "23_3_3",
+                    "isPath": true
+                }
+            ],
+            "tests": []
+        },
+        {
+            "_id": "6d5efa76-64d0-4033-9c34-46c21856d428",
+            "colId": "5d762d29-c16a-4b12-a458-88e9ba10a110",
+            "containerId": "3a178720-3e44-4d1a-8336-edfc013c5745",
+            "name": "Post Run",
+            "url": "http://localhost:3000/api/game/submit",
+            "method": "POST",
+            "sortNum": 60000,
+            "created": "2023-10-25T10:42:26.094Z",
+            "modified": "2023-11-04T09:07:14.956Z",
+            "headers": [],
+            "params": [],
+            "body": {
+                "type": "json",
+                "raw": "{\n    \"player\": \"phil\",\n    \"name\": \"find_it\",\n    \"code\": \"exit\",\n    \"challenge\": \"23_3_1\",\n    \"language\": \"javascript\"\n}",
+                "form": []
+            },
+            "tests": []
+        },
+        {
+            "_id": "95e5ae85-5771-4442-a60f-6a55e9260bfe",
+            "colId": "5d762d29-c16a-4b12-a458-88e9ba10a110",
+            "containerId": "3a178720-3e44-4d1a-8336-edfc013c5745",
+            "name": "Submit Binary",
+            "url": "http://localhost:3000/api/game/binary",
+            "method": "POST",
+            "sortNum": 70000,
+            "created": "2023-11-04T08:48:58.033Z",
+            "modified": "2023-11-04T10:14:51.012Z",
+            "headers": [],
+            "params": [],
+            "body": {
+                "type": "formdata",
+                "raw": "",
+                "form": [
+                    {
+                        "name": "player",
+                        "value": "philip"
+                    },
+                    {
+                        "name": "language",
+                        "value": "rust"
+                    },
+                    {
+                        "name": "challenge",
+                        "value": "23_3_1"
+                    },
+                    {
+                        "name": "filename",
+                        "value": "find_odds"
+                    },
+                    {
+                        "name": "test",
+                        "value": "true"
+                    }
+                ],
+                "files": [
+                    {
+                        "name": "binary",
+                        "value": "/home/philip/code_challenges/workspace/challenge_server/LICENSE"
+                    }
+                ]
             },
             "tests": []
         }
