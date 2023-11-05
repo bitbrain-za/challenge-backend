@@ -29,13 +29,21 @@ impl Submission {
     }
 
     pub fn run_script(&self) -> SubmissionResult {
-        match self.language.to_lowercase().as_str() {
-            "python" => self.run_python(),
+        if let Err(e) = self.save_script() {
+            return SubmissionResult::Failure {
+                message: format!("Error saving script: {}", e),
+            };
+        }
+
+        let result = match self.language.to_lowercase().as_str() {
+            "python" => self.run_script_with("python3"),
 
             _ => SubmissionResult::Failure {
                 message: "Language not yet supported. Please submit a feature request".to_string(),
             },
-        }
+        };
+        let _ = self.delete_file();
+        result
     }
 
     pub fn run_binary(&self) -> SubmissionResult {
@@ -54,12 +62,13 @@ impl Submission {
         let output = match std::process::Command::new(
             "/home/philip/code_challenges/workspace/target/debug/judge",
         )
+        .current_dir("/tmp/code_challenge")
         .arg("-C")
         .arg(self.challenge.replace('_', ""))
         .arg("-L")
         .arg(self.language.to_lowercase())
         .arg("-c")
-        .arg(format!("/tmp/code_challenge/{}", self.filename))
+        .arg(self.filename.as_str())
         .arg("-t")
         .output()
         {
@@ -103,22 +112,17 @@ impl Submission {
         fs::remove_file(format!("/tmp/code_challenge/{}", self.filename))
     }
 
-    fn run_python(&self) -> SubmissionResult {
-        if let Err(e) = self.save_script() {
-            return SubmissionResult::Failure {
-                message: format!("Error saving script: {}", e),
-            };
-        }
-
+    fn run_script_with(&self, interpreter: &str) -> SubmissionResult {
         let output = match std::process::Command::new(
             "/home/philip/code_challenges/workspace/target/debug/judge",
         )
+        .current_dir("/tmp/code_challenge")
         .arg("-C")
-        .arg("2332")
+        .arg(self.challenge.replace('_', ""))
         .arg("-L")
-        .arg("python")
+        .arg(self.language.to_lowercase())
         .arg("-c")
-        .arg(format!("python3 /tmp/code_challenge/{}", self.filename))
+        .arg(format!("{} {}", interpreter, self.filename))
         .arg("-t")
         .output()
         {
