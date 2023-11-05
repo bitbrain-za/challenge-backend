@@ -312,8 +312,7 @@ pub async fn refresh_access_token_handler(
         .finish();
 
     let mut response = Response::new(
-        json!({"status": "success", "access_token": access_token_details.token.unwrap()})
-            .to_string(),
+        json!({"status": "success", "message": access_token_details.token.unwrap()}).to_string(),
     );
     let mut headers = HeaderMap::new();
     headers.append(

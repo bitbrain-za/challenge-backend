@@ -49,7 +49,19 @@ pub async fn get_scores(extract::Path(id): extract::Path<String>) -> impl IntoRe
 
 pub async fn post_run(state: Extension<JWTAuthMiddleware>, body: String) -> impl IntoResponse {
     debug!("Submission from {}", state.user.name);
-    let mut run: Submission = serde_json::from_str(&body).unwrap();
+    let mut run: Submission = match serde_json::from_str(&body) {
+        Ok(r) => r,
+        Err(e) => {
+            error!("Failed to parse submission: {}", e);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to parse submission".to_string(),
+            );
+        }
+    };
+    run.sanitise();
+
+    debug!("Submission: {:?}", run);
     run.player = state.user.name.clone();
     let res = run.run();
     (StatusCode::OK, serde_json::to_string(&res).unwrap())

@@ -58,13 +58,29 @@ pub async fn auth<B>(
     let access_token_details =
         match token::verify_jwt_token(data.env.access_token_public_key.to_owned(), &access_token) {
             Ok(token_details) => token_details,
-            Err(e) => {
-                let error_response = ErrorResponse {
-                    status: "fail",
-                    message: format!("{:?}", e),
-                };
-                return Err((StatusCode::UNAUTHORIZED, Json(error_response)));
-            }
+            Err(e) => match e.kind() {
+                jsonwebtoken::errors::ErrorKind::ExpiredSignature => {
+                    let error_response = ErrorResponse {
+                        status: "expired",
+                        message: "Token has expired, please refresh".to_string(),
+                    };
+                    return Err((StatusCode::UNAUTHORIZED, Json(error_response)));
+                }
+                jsonwebtoken::errors::ErrorKind::InvalidToken => {
+                    let error_response = ErrorResponse {
+                        status: "expired",
+                        message: "Invalid token".to_string(),
+                    };
+                    return Err((StatusCode::UNAUTHORIZED, Json(error_response)));
+                }
+                _ => {
+                    let error_response = ErrorResponse {
+                        status: "fail",
+                        message: format!("{:?}", e),
+                    };
+                    return Err((StatusCode::UNAUTHORIZED, Json(error_response)));
+                }
+            },
         };
 
     let access_token_uuid = uuid::Uuid::parse_str(&access_token_details.token_uuid.to_string())

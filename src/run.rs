@@ -12,6 +12,7 @@ pub struct Submission {
     challenge: String,
     #[serde(skip)]
     binary: Option<Vec<u8>>,
+    test: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -28,14 +29,20 @@ impl Submission {
         self.run_script()
     }
 
+    pub fn sanitise(&mut self) {
+        self.challenge = self.challenge.replace(['_', 'C'], "");
+        self.language = self.language.to_lowercase();
+    }
+
     pub fn run_script(&self) -> SubmissionResult {
         if let Err(e) = self.save_script() {
+            log::error!("Error saving script: {}", e);
             return SubmissionResult::Failure {
                 message: format!("Error saving script: {}", e),
             };
         }
 
-        let result = match self.language.to_lowercase().as_str() {
+        let result = match self.language.as_str() {
             "python" => self.run_script_with("python3"),
 
             _ => SubmissionResult::Failure {
@@ -56,22 +63,25 @@ impl Submission {
         log::debug!(
             "Running binary: {} for challenge {}",
             self.filename,
-            self.challenge.replace('_', "")
+            self.challenge
         );
 
-        let output = match std::process::Command::new(
-            "/home/philip/code_challenges/workspace/target/debug/judge",
-        )
-        .current_dir("/tmp/code_challenge")
-        .arg("-C")
-        .arg(self.challenge.replace('_', ""))
-        .arg("-L")
-        .arg(self.language.to_lowercase())
-        .arg("-c")
-        .arg(self.filename.as_str())
-        .arg("-t")
-        .output()
-        {
+        let mut command =
+            std::process::Command::new("/home/philip/code_challenges/workspace/target/debug/judge");
+        command
+            .current_dir("/tmp/code_challenge")
+            .arg("-C")
+            .arg(&self.challenge)
+            .arg("-L")
+            .arg(&self.language)
+            .arg("-c")
+            .arg(self.filename.as_str());
+
+        if self.test {
+            command.arg("-t");
+        }
+
+        let output = match command.output() {
             Ok(o) => {
                 if o.status.success() {
                     SubmissionResult::Success {
@@ -113,19 +123,23 @@ impl Submission {
     }
 
     fn run_script_with(&self, interpreter: &str) -> SubmissionResult {
-        let output = match std::process::Command::new(
-            "/home/philip/code_challenges/workspace/target/debug/judge",
-        )
-        .current_dir("/tmp/code_challenge")
-        .arg("-C")
-        .arg(self.challenge.replace('_', ""))
-        .arg("-L")
-        .arg(self.language.to_lowercase())
-        .arg("-c")
-        .arg(format!("{} {}", interpreter, self.filename))
-        .arg("-t")
-        .output()
-        {
+        log::debug!("Running script with: {}", interpreter);
+        let mut command =
+            std::process::Command::new("/home/philip/code_challenges/workspace/target/debug/judge");
+        command
+            .current_dir("/tmp/code_challenge")
+            .arg("-C")
+            .arg(&self.challenge)
+            .arg("-L")
+            .arg(&self.language)
+            .arg("-c")
+            .arg(format!("{} {}", interpreter, self.filename));
+
+        if self.test {
+            command.arg("-t");
+        }
+
+        let output = match command.output() {
             Ok(o) => {
                 if o.status.success() {
                     SubmissionResult::Success {
@@ -133,6 +147,11 @@ impl Submission {
                         message: String::from_utf8_lossy(&o.stdout).to_string(),
                     }
                 } else {
+                    log::error!(
+                        "Error running script: {}, {}",
+                        String::from_utf8_lossy(&o.stdout),
+                        String::from_utf8_lossy(&o.stderr)
+                    );
                     SubmissionResult::Failure {
                         message: String::from_utf8_lossy(&o.stderr).to_string(),
                     }
@@ -142,6 +161,7 @@ impl Submission {
                 message: format!("Error running command: {}", e),
             },
         };
+        log::debug!("Output: {:?}", output);
         output
     }
 }
@@ -195,7 +215,7 @@ impl SubmissionBuilder {
     }
 
     pub fn language(mut self, language: &str) -> SubmissionBuilder {
-        self.submission.language = language.to_string();
+        self.submission.language = language.to_string().to_lowercase();
         self.language_set = true;
         self
     }
@@ -208,6 +228,7 @@ impl SubmissionBuilder {
 
     pub fn challenge(mut self, challenge: &str) -> SubmissionBuilder {
         self.submission.challenge = challenge.to_string();
+        self.submission.challenge = self.submission.challenge.replace(['_', 'C'], "");
         self.challenge_set = true;
         self
     }
