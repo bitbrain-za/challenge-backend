@@ -29,6 +29,10 @@ impl Submission {
         self.run_script()
     }
 
+    fn get_judge() -> String {
+        option_env!("JUDGE_PATH").unwrap_or("judge").to_string()
+    }
+
     pub fn sanitise(&mut self) {
         self.challenge = self.challenge.replace(['_', 'C'], "");
         self.language = self.language.to_lowercase();
@@ -61,15 +65,16 @@ impl Submission {
         }
 
         log::debug!(
-            "Running binary: {} for challenge {}",
+            "Running binary: {} for challenge {}. Test: {}",
             self.filename,
-            self.challenge
+            self.challenge,
+            self.test
         );
 
-        let mut command =
-            std::process::Command::new("/home/philip/code_challenges/workspace/target/debug/judge");
+        let mut command = std::process::Command::new(Self::get_judge());
         command
             .current_dir("/tmp/code_challenge")
+            .env("PATH", "/tmp/code_challenge")
             .arg("-C")
             .arg(&self.challenge)
             .arg("-L")
@@ -124,8 +129,7 @@ impl Submission {
 
     fn run_script_with(&self, interpreter: &str) -> SubmissionResult {
         log::debug!("Running script with: {}", interpreter);
-        let mut command =
-            std::process::Command::new("/home/philip/code_challenges/workspace/target/debug/judge");
+        let mut command = std::process::Command::new(Self::get_judge());
         command
             .current_dir("/tmp/code_challenge")
             .arg("-C")
@@ -197,7 +201,7 @@ impl SubmissionBuilder {
             "language" => Ok(self.language(value)),
             "code" => Ok(self.code(value)),
             "challenge" => Ok(self.challenge(value)),
-            "test" => Ok(self),
+            "test" => Ok(self.test("true" == value.to_lowercase())),
             _ => Err(format!("Unknown field: {}", field)),
         }
     }
@@ -236,6 +240,11 @@ impl SubmissionBuilder {
     pub fn binary(mut self, binary: Vec<u8>) -> SubmissionBuilder {
         self.submission.binary = Some(binary);
         self.binary_set = true;
+        self
+    }
+
+    pub fn test(mut self, test: bool) -> SubmissionBuilder {
+        self.submission.test = test;
         self
     }
 

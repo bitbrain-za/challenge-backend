@@ -6,13 +6,14 @@ use axum::{
     response::IntoResponse,
     Extension,
 };
+use envcrypt::option_envc;
 use log::{debug, error};
 use scoreboard_db::{Db, Score};
 
 pub async fn get_scores(extract::Path(id): extract::Path<String>) -> impl IntoResponse {
     const MAX_SCORES: Option<usize> = Some(1000);
     debug!("get Scores");
-    let db_pass = match option_env!("DB_PASSWORD") {
+    let db_pass = match option_envc!("DB_PASSWORD") {
         Some(pass) => pass,
         None => {
             return (
