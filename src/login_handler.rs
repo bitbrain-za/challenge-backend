@@ -165,15 +165,14 @@ pub async fn login_user_handler(
     )
     .path("/")
     .max_age(time::Duration::minutes(data.env.refresh_token_max_age * 60))
-    .same_site(SameSite::None)
+    .same_site(SameSite::Strict)
     .http_only(true)
     .finish();
 
     let logged_in_cookie = Cookie::build("logged_in", "true")
-        .domain("localhost")
         .path("/")
         .secure(false)
-        .same_site(SameSite::None)
+        .same_site(SameSite::Strict)
         .http_only(true)
         .finish();
 
@@ -199,8 +198,6 @@ pub async fn login_user_handler(
         header::SET_COOKIE,
         logged_in_cookie.to_string().parse().unwrap(),
     );
-
-    headers.append(header::SET_COOKIE, "test=1".to_string().parse().unwrap());
 
     response.headers_mut().extend(headers);
     Ok(response)
