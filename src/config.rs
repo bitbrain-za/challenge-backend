@@ -6,6 +6,7 @@ pub struct Config {
     pub db_url: String,
     pub redis_url: String,
     pub client_origin: String,
+    pub my_url: String,
 
     pub access_token_private_key: String,
     pub access_token_public_key: String,
@@ -22,6 +23,7 @@ impl Config {
     pub fn init() -> Config {
         let db_password = option_envc!("DB_PASSWORD").unwrap().to_string();
         let db_url = option_envc!("DATABASE_URL").unwrap().to_string();
+        let my_url = option_envc!("MY_URL").unwrap().to_string();
 
         let client_origin = option_envc!("CLIENT_ORIGIN").unwrap().into();
         let redis_url = option_envc!("REDIS_URL").unwrap().into();
@@ -43,6 +45,7 @@ impl Config {
             .unwrap();
 
         Config {
+            my_url,
             client_origin,
             db_password,
             db_url,

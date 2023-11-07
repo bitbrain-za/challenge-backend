@@ -7,24 +7,24 @@ struct Config {
     pub email_username: String,
     pub email_password: String,
     pub email_smtp_server: String,
-    pub email_smtp_port: u16,
 }
 
 impl Config {
     pub fn init() -> Self {
         let email_username = option_envc!("EMAIL_USERNAME").unwrap().into();
         let email_password = option_envc!("EMAIL_PASSWORD").unwrap().into();
-        let email_smtp_server = option_envc!("EMAIL_SMTP_SERVER").unwrap().into();
+        let email_smtp_server: String = option_envc!("EMAIL_SMTP_SERVER").unwrap().into();
         let email_smtp_port = option_envc!("EMAIL_SMTP_PORT")
             .unwrap()
             .parse::<u16>()
             .unwrap();
 
+        let email_smtp_server = format!("{}:{}", email_smtp_server, email_smtp_port);
+
         Self {
             email_username,
             email_password,
             email_smtp_server,
-            email_smtp_port,
         }
     }
 }
@@ -37,15 +37,6 @@ pub struct Email {
 }
 
 impl Email {
-    pub fn new(name: String, to_address: String, subject: String, body: String) -> Email {
-        Email {
-            name,
-            to_address,
-            subject,
-            body,
-        }
-    }
-
     pub fn new_registration(name: String, to_address: String, verification_link: String) -> Email {
         let subject = "Welcome to the Code Challenge!".to_string();
         let body = format!(
@@ -60,7 +51,7 @@ impl Email {
         }
     }
 
-    pub fn new_password_reset(name: String, to_address: String, reset_link: String) -> Email {
+    pub fn _new_password_reset(name: String, to_address: String, reset_link: String) -> Email {
         let subject = "Password Reset".to_string();
         let body = format!(
             "Hello {},\n\nPlease click the following link to reset your password:\n\n{}\n\nThanks!",

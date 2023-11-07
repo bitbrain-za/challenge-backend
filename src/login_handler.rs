@@ -1,3 +1,4 @@
+use rand::{distributions::Alphanumeric, rngs::OsRng, Rng};
 use std::sync::Arc;
 
 use argon2::{password_hash::SaltString, Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
@@ -11,10 +12,10 @@ use axum_extra::extract::{
     cookie::{Cookie, SameSite},
     CookieJar,
 };
-use rand_core::OsRng;
 use serde_json::json;
 
 use crate::{
+    email::Email,
     jwt_auth::JWTAuthMiddleware,
     token::{self, TokenDetails},
     user::{LoginUserSchema, RegisterUserSchema, User},
@@ -62,11 +63,32 @@ pub async fn register_user_handler(
         })
         .map(|hash| hash.to_string())?;
 
-    sqlx::query!(
-        "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
+    let verification_code = generate_random_string(20);
+    let verification_url = format!(
+        "{}/api/auth/verifyemail/{}",
+        data.env.my_url.to_owned(),
+        verification_code
+    );
+
+    let verification_mail = Email::new_registration(
         body.name.to_string(),
         body.email.to_string().to_ascii_lowercase(),
-        hashed_password
+        verification_url,
+    );
+    verification_mail.send().map_err(|e| {
+        let error_response = serde_json::json!({
+            "status": "fail",
+            "message": format!("Error sending verification email: {}", e),
+        });
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
+    })?;
+
+    sqlx::query!(
+        "INSERT INTO users (name, email, password, verification_code) VALUES (?, ?, ?, ?)",
+        body.name.to_string(),
+        body.email.to_string().to_ascii_lowercase(),
+        hashed_password,
+        verification_code
     )
     .execute(&data.db)
     .await
@@ -466,4 +488,15 @@ async fn save_token_data_to_redis(
             (StatusCode::UNPROCESSABLE_ENTITY, Json(error_response))
         })?;
     Ok(())
+}
+
+fn generate_random_string(length: usize) -> String {
+    let rng = rand::thread_rng();
+    let random_string: String = rng
+        .sample_iter(&Alphanumeric)
+        .take(length)
+        .map(char::from)
+        .collect();
+
+    random_string
 }
