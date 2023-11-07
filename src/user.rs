@@ -1,3 +1,4 @@
+use chrono::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[allow(non_snake_case)]
@@ -9,6 +10,9 @@ pub struct User {
     pub password: String,
     pub role: String,
     pub verified: i8,
+    pub verification_code: Option<String>,
+    pub password_reset_token: Option<String>,
+    pub password_reset_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

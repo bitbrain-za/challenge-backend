@@ -1,8 +1,9 @@
+use rand::{distributions::Alphanumeric, rngs::OsRng, Rng};
 use std::sync::Arc;
 
 use argon2::{password_hash::SaltString, Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use axum::{
-    extract::State,
+    extract::{Path, State},
     http::{header, HeaderMap, Response, StatusCode},
     response::IntoResponse,
     Extension, Json,
@@ -11,10 +12,10 @@ use axum_extra::extract::{
     cookie::{Cookie, SameSite},
     CookieJar,
 };
-use rand_core::OsRng;
 use serde_json::json;
 
 use crate::{
+    email::Email,
     jwt_auth::JWTAuthMiddleware,
     token::{self, TokenDetails},
     user::{LoginUserSchema, RegisterUserSchema, User},
@@ -62,11 +63,32 @@ pub async fn register_user_handler(
         })
         .map(|hash| hash.to_string())?;
 
-    sqlx::query!(
-        "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
+    let verification_code = generate_random_string(20);
+    let verification_url = format!(
+        "{}/api/auth/verifyemail/{}",
+        data.env.my_url.to_owned(),
+        verification_code
+    );
+
+    let verification_mail = Email::new_registration(
         body.name.to_string(),
         body.email.to_string().to_ascii_lowercase(),
-        hashed_password
+        verification_url,
+    );
+    verification_mail.send().map_err(|e| {
+        let error_response = serde_json::json!({
+            "status": "fail",
+            "message": format!("Error sending verification email: {}", e),
+        });
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
+    })?;
+
+    sqlx::query!(
+        "INSERT INTO users (name, email, password, verification_code) VALUES (?, ?, ?, ?)",
+        body.name.to_string(),
+        body.email.to_string().to_ascii_lowercase(),
+        hashed_password,
+        verification_code
     )
     .execute(&data.db)
     .await
@@ -421,6 +443,62 @@ pub async fn logout_handler(
     Ok(response)
 }
 
+pub async fn verify_email_handler(
+    State(data): State<Arc<AppState>>,
+    Path(verification_code): Path<String>,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let user: User = sqlx::query_as("SELECT * FROM users WHERE verification_code = $1")
+        .bind(&verification_code)
+        .fetch_optional(&data.db)
+        .await
+        .map_err(|e| {
+            let error_response = serde_json::json! ({
+                "status": "error",
+                "message:": format!("Database error: {}", e),
+            });
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
+        })?
+        .ok_or_else(|| {
+            let error_response = serde_json::json! ({
+                "status": "fail",
+                "message:": "Invalid verification code or user doesn't exist".to_string(),
+            });
+            (StatusCode::UNAUTHORIZED, Json(error_response))
+        })?;
+
+    if user.verified > 0 {
+        let error_response = serde_json::json! ({
+            "status": "fail",
+            "message:": "User already verified".to_string(),
+        });
+        return Err((StatusCode::CONFLICT, Json(error_response)));
+    }
+
+    sqlx::query(
+        "UPDATE users SET verification_code = $1, verified = $2 WHERE verification_code = $3",
+    )
+    .bind(Option::<String>::None)
+    .bind(true)
+    .bind(&verification_code)
+    .execute(&data.db)
+    .await
+    .map_err(|e| {
+        let error_response = serde_json::json! ({
+            "status": "fail",
+            "message": format!("Error updating user: {}", e),
+        });
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
+    })?;
+
+    let response = serde_json::json!({
+            "status": "success",
+            "message": "Email verified successfully"
+        }
+    );
+
+    Ok(Json(response))
+}
+
 fn generate_token(
     user_id: i64,
     max_age: i64,
@@ -466,4 +544,15 @@ async fn save_token_data_to_redis(
             (StatusCode::UNPROCESSABLE_ENTITY, Json(error_response))
         })?;
     Ok(())
+}
+
+fn generate_random_string(length: usize) -> String {
+    let rng = rand::thread_rng();
+    let random_string: String = rng
+        .sample_iter(&Alphanumeric)
+        .take(length)
+        .map(char::from)
+        .collect();
+
+    random_string
 }

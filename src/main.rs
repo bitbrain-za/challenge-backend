@@ -1,4 +1,5 @@
 mod config;
+mod email;
 mod handler;
 mod jwt_auth;
 mod login_handler;
