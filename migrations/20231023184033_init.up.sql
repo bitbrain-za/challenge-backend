@@ -5,7 +5,11 @@ CREATE TABLE
         email VARCHAR(255) NOT NULL UNIQUE,
         verified BOOLEAN NOT NULL DEFAULT FALSE,
         password VARCHAR(100) NOT NULL,
-        role VARCHAR(50) NOT NULL DEFAULT 'user'
+        role VARCHAR(50) NOT NULL DEFAULT 'user',
+        verification_code VARCHAR(255),
+        password_reset_token VARCHAR(50)
     );
 
-CREATE INDEX users_email_idx ON users (email);
+CREATE INDEX users_email_idx ON code_challenge.users (email);
+CREATE INDEX idx_verification_code ON code_challenge.users(verification_code);
+CREATE INDEX idx_password_reset_token ON users(password_reset_token);
