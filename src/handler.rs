@@ -98,6 +98,8 @@ pub async fn post_binary(
             }
         };
     }
+
+    builder = builder.player(&state.user.name);
     let submission = match builder.build() {
         Ok(s) => s,
         Err(e) => {

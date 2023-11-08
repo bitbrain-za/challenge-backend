@@ -75,6 +75,8 @@ impl Submission {
         command
             .current_dir("/tmp/code_challenge")
             .env("PATH", "/tmp/code_challenge")
+            .arg("-n")
+            .arg(&self.player)
             .arg("-C")
             .arg(&self.challenge)
             .arg("-L")
@@ -132,6 +134,8 @@ impl Submission {
         let mut command = std::process::Command::new(Self::get_judge());
         command
             .current_dir("/tmp/code_challenge")
+            .arg("-n")
+            .arg(&self.player)
             .arg("-C")
             .arg(&self.challenge)
             .arg("-L")
