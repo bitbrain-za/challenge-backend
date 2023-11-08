@@ -51,6 +51,20 @@ pub async fn register_user_handler(
         }
     }
 
+    if !cfg!(debug_assertions)
+        && !body
+            .email
+            .to_owned()
+            .to_ascii_lowercase()
+            .contains(option_env!("ALLOWED_DOMAIN").unwrap_or("dummy.com"))
+    {
+        let error_response = serde_json::json!({
+            "status": "fail",
+            "message": "Email domain not allowed",
+        });
+        return Err((StatusCode::FORBIDDEN, Json(error_response)));
+    }
+
     let salt = SaltString::generate(&mut OsRng);
     let hashed_password = Argon2::default()
         .hash_password(body.password.as_bytes(), &salt)
