@@ -12,4 +12,4 @@ CREATE TABLE
 
 CREATE INDEX users_email_idx ON code_challenge.users (email);
 CREATE INDEX idx_verification_code ON code_challenge.users(verification_code);
-CREATE INDEX idx_password_reset_token ON users(password_reset_token);
+CREATE INDEX idx_password_reset_token ON code_challenge.users(password_reset_token);
