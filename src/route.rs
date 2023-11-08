@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use crate::handler::{get_scores, post_binary, post_run};
 use crate::login_handler::{
-    login_user_handler, logout_handler, refresh_access_token_handler, register_user_handler,
-    verify_email_handler,
+    forgot_password_handler, login_user_handler, logout_handler, refresh_access_token_handler,
+    register_user_handler, reset_password_handler, verify_email_handler,
 };
 
 use crate::jwt_auth::auth;
@@ -25,6 +25,11 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
         .route(
             "/api/auth/verifyemail/:verification_code",
             get(verify_email_handler),
+        )
+        .route("/api/auth/forgotpassword", post(forgot_password_handler))
+        .route(
+            "/api/auth/resetpassword/:password_reset_token",
+            post(reset_password_handler),
         )
         .route(
             "/api/auth/logout",

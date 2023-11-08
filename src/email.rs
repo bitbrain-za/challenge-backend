@@ -14,12 +14,12 @@ impl Config {
         let email_username = option_envc!("EMAIL_USERNAME").unwrap().into();
         let email_password = option_envc!("EMAIL_PASSWORD").unwrap().into();
         let email_smtp_server: String = option_envc!("EMAIL_SMTP_SERVER").unwrap().into();
-        let email_smtp_port = option_envc!("EMAIL_SMTP_PORT")
-            .unwrap()
-            .parse::<u16>()
-            .unwrap();
+        // let email_smtp_port = option_envc!("EMAIL_SMTP_PORT")
+        //     .unwrap()
+        //     .parse::<u16>()
+        //     .unwrap();
 
-        let email_smtp_server = format!("{}:{}", email_smtp_server, email_smtp_port);
+        // let email_smtp_server = format!("{}:{}", email_smtp_server, email_smtp_port);
 
         Self {
             email_username,
@@ -51,7 +51,7 @@ impl Email {
         }
     }
 
-    pub fn _new_password_reset(name: String, to_address: String, reset_link: String) -> Email {
+    pub fn new_password_reset(name: String, to_address: String, reset_link: String) -> Email {
         let subject = "Password Reset".to_string();
         let body = format!(
             "Hello {},\n\nPlease click the following link to reset your password:\n\n{}\n\nThanks!",
@@ -70,12 +70,12 @@ impl Email {
 
         let email = Message::builder()
             .from(
-                format!("{} <{}>", config.email_username, config.email_username)
+                format!("The Pikkewyne Code Challenge <{}>", config.email_username)
                     .parse()
                     .unwrap(),
             )
             .reply_to(
-                format!("{} <{}>", config.email_username, config.email_username)
+                format!("Do Not Reply <{}>", config.email_username)
                     .parse()
                     .unwrap(),
             )
