@@ -7,7 +7,8 @@ CREATE TABLE
         password VARCHAR(100) NOT NULL,
         role VARCHAR(50) NOT NULL DEFAULT 'user',
         verification_code VARCHAR(255),
-        password_reset_token VARCHAR(50)
+        password_reset_token VARCHAR(50),
+        password_reset_at TIMESTAMP
     );
 
 CREATE INDEX users_email_idx ON code_challenge.users (email);
