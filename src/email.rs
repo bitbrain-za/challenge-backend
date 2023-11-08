@@ -51,11 +51,11 @@ impl Email {
         }
     }
 
-    pub fn new_password_reset(name: String, to_address: String, reset_link: String) -> Email {
+    pub fn new_password_reset(name: String, to_address: String, reset_token: &str) -> Email {
         let subject = "Password Reset".to_string();
         let body = format!(
-            "Hello {},\n\nPlease click the following link to reset your password:\n\n{}\n\nThanks!",
-            name, reset_link
+            "Hello {},\n\nPlease use the following token to reset your password:\n\n{}\n\nThanks!",
+            name, reset_token
         );
         Email {
             name,

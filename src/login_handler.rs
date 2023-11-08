@@ -536,16 +536,10 @@ pub async fn forgot_password_handler(
     let password_reset_at =
         chrono::Utc::now() + chrono::Duration::minutes(password_token_expires_in);
 
-    let password_reset_url = format!(
-        "{}api/auth/resetpassword/{}",
-        data.env.my_url.to_owned(),
-        password_reset_token
-    );
-
     let reset_mail = Email::new_password_reset(
         user.name,
         body.email.to_string().to_ascii_lowercase(),
-        password_reset_url,
+        &password_reset_token,
     );
     reset_mail.send().map_err(|e| {
         let error_response = serde_json::json!({
