@@ -18,7 +18,7 @@ use crate::{
     email::Email,
     jwt_auth::JWTAuthMiddleware,
     token::{self, TokenDetails},
-    user::{LoginUserSchema, RegisterUserSchema, User},
+    user::{ForgotPasswordSchema, LoginUserSchema, RegisterUserSchema, ResetPasswordSchema, User},
     AppState,
 };
 
@@ -29,7 +29,7 @@ pub async fn register_user_handler(
     Json(body): Json<RegisterUserSchema>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let user_exists: Option<bool> =
-        sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)")
+        sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM users WHERE email = ?)")
             .bind(body.email.to_owned().to_ascii_lowercase())
             .fetch_one(&data.db)
             .await
@@ -65,7 +65,7 @@ pub async fn register_user_handler(
 
     let verification_code = generate_random_string(20);
     let verification_url = format!(
-        "{}/api/auth/verifyemail/{}",
+        "{}api/auth/verifyemail/{}",
         data.env.my_url.to_owned(),
         verification_code
     );
@@ -447,7 +447,7 @@ pub async fn verify_email_handler(
     State(data): State<Arc<AppState>>,
     Path(verification_code): Path<String>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    let user: User = sqlx::query_as("SELECT * FROM users WHERE verification_code = $1")
+    let user: User = sqlx::query_as("SELECT * FROM users WHERE verification_code = ?")
         .bind(&verification_code)
         .fetch_optional(&data.db)
         .await
@@ -474,21 +474,19 @@ pub async fn verify_email_handler(
         return Err((StatusCode::CONFLICT, Json(error_response)));
     }
 
-    sqlx::query(
-        "UPDATE users SET verification_code = $1, verified = $2 WHERE verification_code = $3",
-    )
-    .bind(Option::<String>::None)
-    .bind(true)
-    .bind(&verification_code)
-    .execute(&data.db)
-    .await
-    .map_err(|e| {
-        let error_response = serde_json::json! ({
-            "status": "fail",
-            "message": format!("Error updating user: {}", e),
-        });
-        (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
-    })?;
+    sqlx::query("UPDATE users SET verification_code = ?, verified = ? WHERE verification_code = ?")
+        .bind(Option::<String>::None)
+        .bind(true)
+        .bind(&verification_code)
+        .execute(&data.db)
+        .await
+        .map_err(|e| {
+            let error_response = serde_json::json! ({
+                "status": "fail",
+                "message": format!("Error updating user: {}", e),
+            });
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
+        })?;
 
     let response = serde_json::json!({
             "status": "success",
@@ -497,6 +495,159 @@ pub async fn verify_email_handler(
     );
 
     Ok(Json(response))
+}
+
+pub async fn forgot_password_handler(
+    State(data): State<Arc<AppState>>,
+    Json(body): Json<ForgotPasswordSchema>,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let err_message = "You will receive a password reset email if user with that email exist";
+    let email_address = body.email.to_owned().to_ascii_lowercase();
+
+    let user: User = sqlx::query_as("SELECT * FROM users WHERE email = ?")
+        .bind(&email_address.clone())
+        .fetch_optional(&data.db)
+        .await
+        .map_err(|e| {
+            let error_response = serde_json::json!( {
+                "status": "error",
+                "message": format!("Database error: {}", e),
+            });
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
+        })?
+        .ok_or_else(|| {
+            let error_response = serde_json::json!( {
+                "status": "fail",
+                "message": err_message.to_string(),
+            });
+            (StatusCode::OK, Json(error_response))
+        })?;
+
+    if 0 == user.verified {
+        let error_response = serde_json::json!( {
+            "status": "fail",
+            "message": "Account not verified".to_string(),
+        });
+        return Err((StatusCode::FORBIDDEN, Json(error_response)));
+    }
+
+    let password_reset_token = generate_random_string(20);
+    let password_token_expires_in = 10; // 10 minutes
+    let password_reset_at =
+        chrono::Utc::now() + chrono::Duration::minutes(password_token_expires_in);
+
+    let password_reset_url = format!(
+        "{}api/auth/resetpassword/{}",
+        data.env.my_url.to_owned(),
+        password_reset_token
+    );
+
+    let reset_mail = Email::new_password_reset(
+        user.name,
+        body.email.to_string().to_ascii_lowercase(),
+        password_reset_url,
+    );
+    reset_mail.send().map_err(|e| {
+        let error_response = serde_json::json!({
+            "status": "fail",
+            "message": format!("Error sending reset email: {}", e),
+        });
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
+    })?;
+
+    sqlx::query("UPDATE users SET password_reset_token = ?, password_reset_at = ? WHERE email = ?")
+        .bind(password_reset_token)
+        .bind(password_reset_at)
+        .bind(&email_address.clone())
+        .execute(&data.db)
+        .await
+        .map_err(|e| {
+            let error_response = serde_json::json!( {
+                "status": "fail",
+                "message": format!("Error updating user: {}", e),
+            });
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
+        })?;
+
+    let response = serde_json::json!({
+            "status": "success",
+            "message": err_message
+        }
+    );
+
+    Ok(Json(response))
+}
+
+pub async fn reset_password_handler(
+    State(data): State<Arc<AppState>>,
+    Path(password_reset_token): Path<String>,
+    Json(body): Json<ResetPasswordSchema>,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let user: User = sqlx::query_as(
+        "SELECT * FROM users WHERE password_reset_token = ? AND password_reset_at > ?",
+    )
+    .bind(password_reset_token)
+    .bind(chrono::Utc::now())
+    .fetch_optional(&data.db)
+    .await
+    .map_err(|e| {
+        let error_response = serde_json::json! ( {
+            "status": "error",
+            "message": format!("Database error: {}", e),
+        });
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
+    })?
+    .ok_or_else(|| {
+        let error_response = serde_json::json! ( {
+            "status": "fail",
+            "message": "The password reset token is invalid or has expired".to_string(),
+        });
+        (StatusCode::FORBIDDEN, Json(error_response))
+    })?;
+
+    let salt = SaltString::generate(&mut OsRng);
+    let hashed_password = Argon2::default()
+        .hash_password(body.password.as_bytes(), &salt)
+        .map_err(|e| {
+            let error_response = serde_json::json! ( {
+                "status": "fail",
+                "message": format!("Error while hashing password: {}", e),
+            });
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
+        })
+        .map(|hash| hash.to_string())?;
+
+    sqlx::query(
+        "UPDATE users SET password = ?, password_reset_token = ?, password_reset_at = ? WHERE email = ?",
+    )
+    .bind(hashed_password)
+    .bind(Option::<String>::None)
+    .bind(Option::<String>::None)
+    .bind(&user.email.clone().to_ascii_lowercase())
+    .execute(&data.db)
+    .await
+    .map_err(|e| {
+        let error_response = serde_json::json! ( {
+            "status": "fail",
+            "message": format!("Error updating user: {}", e),
+        });
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
+    })?;
+
+    let cookie = Cookie::build("token", "")
+        .path("/")
+        .max_age(time::Duration::minutes(-1))
+        .same_site(SameSite::Lax)
+        .http_only(true)
+        .finish();
+
+    let mut response = Response::new(
+        json!({"status": "success", "message": "Password data updated successfully"}).to_string(),
+    );
+    response
+        .headers_mut()
+        .insert(header::SET_COOKIE, cookie.to_string().parse().unwrap());
+    Ok(response)
 }
 
 fn generate_token(
