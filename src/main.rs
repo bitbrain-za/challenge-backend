@@ -85,7 +85,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    let url = format!("127.0.0.1:{}", port);
+    let url = format!("0.0.0.0:{}", port);
     let origins = [
         "http://localhost:8080".parse()?,
         config.client_origin.as_str().parse()?,
