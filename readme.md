@@ -20,10 +20,6 @@ move (host) sysvinit/challenge_server to (target) /etc/init.d/challenge_server
 
 install mysql and redis
 
-# Configuring
-Use `-P 1234` to set the port to 1234
-In the sysv script, you can set the port in the command
-
 # logs
 
 Logs can then be viewed here:
