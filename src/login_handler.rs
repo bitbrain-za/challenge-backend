@@ -193,6 +193,7 @@ pub async fn login_user_handler(
     .path("/")
     .max_age(time::Duration::minutes(data.env.access_token_max_age * 60))
     .same_site(SameSite::Strict)
+    .secure(true)
     .http_only(true)
     .finish();
     let refresh_cookie = Cookie::build(
@@ -203,11 +204,12 @@ pub async fn login_user_handler(
     .max_age(time::Duration::minutes(data.env.refresh_token_max_age * 60))
     .same_site(SameSite::Strict)
     .http_only(true)
+    .secure(true)
     .finish();
 
     let logged_in_cookie = Cookie::build("logged_in", "true")
         .path("/")
-        .secure(false)
+        .secure(true)
         .same_site(SameSite::Strict)
         .http_only(true)
         .finish();
@@ -714,4 +716,52 @@ fn generate_random_string(length: usize) -> String {
         .collect();
 
     random_string
+}
+
+pub async fn cookie_test_handler(
+    State(data): State<Arc<AppState>>,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let logged_in_cookie = Cookie::build("logged_in", "false")
+        .path("/")
+        .domain(data.env.my_ip.clone())
+        .secure(true)
+        .same_site(SameSite::Strict)
+        .http_only(true)
+        .finish();
+    let test_cookie = Cookie::build("foo", "bar")
+        .domain(data.env.my_url.clone())
+        .path("/app")
+        .secure(true)
+        .same_site(SameSite::Lax)
+        .http_only(true)
+        .finish();
+    let test_cookie2 = Cookie::build("bar", "bar")
+        .path("/")
+        .domain(data.env.my_url.clone())
+        .secure(true)
+        .same_site(SameSite::None)
+        .http_only(true)
+        .finish();
+    let mut response = Response::new(
+        json!({
+            "Success": {
+                "status": "success",
+                "access_token": "null"
+            }
+        })
+        .to_string(),
+    );
+    let mut headers = HeaderMap::new();
+    headers.append(header::SET_COOKIE, test_cookie.to_string().parse().unwrap());
+    headers.append(
+        header::SET_COOKIE,
+        test_cookie2.to_string().parse().unwrap(),
+    );
+    headers.append(
+        header::SET_COOKIE,
+        logged_in_cookie.to_string().parse().unwrap(),
+    );
+
+    response.headers_mut().extend(headers);
+    Ok(response)
 }

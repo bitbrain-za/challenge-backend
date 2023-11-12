@@ -8,12 +8,11 @@ mod run;
 mod token;
 mod user;
 use axum::http::{
-    header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE, ORIGIN},
+    header::{AUTHORIZATION, CONTENT_TYPE, ORIGIN},
     Method,
 };
 use config::Config;
 use envcrypt::option_envc;
-use http::header::{COOKIE, SET_COOKIE};
 use log::{info, LevelFilter};
 use redis::Client;
 use route::create_router;
@@ -91,17 +90,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         config.client_origin.as_str().parse()?,
     ];
     let cors = CorsLayer::new()
-        .allow_methods([Method::GET, Method::POST, Method::PATCH, Method::DELETE])
+        .allow_methods([Method::GET, Method::POST])
         .allow_credentials(true)
         .allow_origin(origins)
-        .allow_headers([
-            AUTHORIZATION,
-            ACCEPT,
-            COOKIE,
-            SET_COOKIE,
-            CONTENT_TYPE,
-            ORIGIN,
-        ]);
+        .allow_headers([AUTHORIZATION, CONTENT_TYPE, ORIGIN]);
 
     let app = create_router(Arc::new(AppState {
         db: pool.clone(),

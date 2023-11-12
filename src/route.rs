@@ -2,8 +2,9 @@ use std::sync::Arc;
 
 use crate::handler::{get_scores, post_binary, post_run};
 use crate::login_handler::{
-    forgot_password_handler, login_user_handler, logout_handler, refresh_access_token_handler,
-    register_user_handler, reset_password_handler, verify_email_handler,
+    cookie_test_handler, forgot_password_handler, login_user_handler, logout_handler,
+    refresh_access_token_handler, register_user_handler, reset_password_handler,
+    verify_email_handler,
 };
 
 use crate::jwt_auth::auth;
@@ -19,6 +20,7 @@ const CONTENT_LENGTH_LIMIT: usize = 20 * 1024 * 1024;
 
 pub fn create_router(app_state: Arc<AppState>) -> Router {
     Router::new()
+        .route("/api/test", get(cookie_test_handler))
         .route("/api/auth/register", post(register_user_handler))
         .route("/api/auth/login", post(login_user_handler))
         .route("/api/auth/refresh", get(refresh_access_token_handler))
