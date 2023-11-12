@@ -20,6 +20,12 @@ move (host) sysvinit/challenge_server to (target) /etc/init.d/challenge_server
 
 install mysql and redis
 
+# Configuring
+Use `-S` to turn on TLS
+~~In the sysv script, you can set the port in the command~~ 
+Port is currently hardboded.
+TODO: bring back configuration
+
 # logs
 
 Logs can then be viewed here:

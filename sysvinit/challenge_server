@@ -10,7 +10,7 @@
 ### END INIT INFO
 
 dir="/usr/bin"
-cmd="/usr/bin/challenge_server"
+cmd="/usr/bin/challenge_server -S"
 
 name=`basename $0`
 pid_file="/var/run/$name.pid"
