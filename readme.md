@@ -22,9 +22,10 @@ install mysql and redis
 
 # Configuring
 Use `-S` to turn on TLS
-~~In the sysv script, you can set the port in the command~~ 
-Port is currently hardboded.
-TODO: bring back configuration
+
+Use `-p <PORT>` to set the port.
+
+In the sysv script, you can set the port and security in the command
 
 # logs
 

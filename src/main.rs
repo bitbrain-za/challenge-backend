@@ -37,7 +37,7 @@ struct Ports {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let ports = Ports {
+    let mut ports = Ports {
         https: 3000,
         http: 3000,
     };
@@ -64,9 +64,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let args = std::env::args().collect::<Vec<String>>();
     let mut tls = false;
-    for arg in args.iter() {
+    for (i, arg) in args.iter().enumerate() {
         if arg == "-S" {
             tls = true;
+        }
+        if arg == "-p" {
+            if let Some(p) = args.get(i + 1) {
+                let p = p.parse::<u16>().expect("Invalid port number");
+                info!("Using port {}", p);
+                ports.https = p;
+                ports.http = p;
+            }
         }
     }
 
