@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use crate::handler::{get_scores, post_binary, post_run};
 use crate::login_handler::{
-    cookie_test_handler, forgot_password_handler, login_user_handler, logout_handler,
-    refresh_access_token_handler, register_user_handler, reset_password_handler,
+    cookie_test_handler, delete_account_handler, forgot_password_handler, login_user_handler,
+    logout_handler, refresh_access_token_handler, register_user_handler, reset_password_handler,
     verify_email_handler,
 };
 
@@ -36,6 +36,11 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
         .route(
             "/api/auth/logout",
             post(logout_handler)
+                .route_layer(middleware::from_fn_with_state(app_state.clone(), auth)),
+        )
+        .route(
+            "/api/auth/deleteaccount",
+            post(delete_account_handler)
                 .route_layer(middleware::from_fn_with_state(app_state.clone(), auth)),
         )
         .route(

@@ -459,6 +459,120 @@ pub async fn logout_handler(
     Ok(response)
 }
 
+pub async fn delete_account_handler(
+    cookie_jar: CookieJar,
+    Extension(auth_guard): Extension<JWTAuthMiddleware>,
+    State(data): State<Arc<AppState>>,
+    Json(body): Json<ForgotPasswordSchema>,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let message = "Token is invalid or session has expired";
+
+    let refresh_token = cookie_jar
+        .get("refresh_token")
+        .map(|cookie| cookie.value().to_string())
+        .ok_or_else(|| {
+            let error_response = serde_json::json!({
+                "status": "fail",
+                "message": message
+            });
+            (StatusCode::FORBIDDEN, Json(error_response))
+        })?;
+
+    let refresh_token_details =
+        match token::verify_jwt_token(data.env.refresh_token_public_key.to_owned(), &refresh_token)
+        {
+            Ok(token_details) => token_details,
+            Err(e) => {
+                let error_response = serde_json::json!({
+                    "status": "fail",
+                    "message": format_args!("{:?}", e)
+                });
+                return Err((StatusCode::UNAUTHORIZED, Json(error_response)));
+            }
+        };
+
+    let mut redis_client = data
+        .redis_client
+        .get_async_connection()
+        .await
+        .map_err(|e| {
+            let error_response = serde_json::json!({
+                "status": "error",
+                "message": format!("Redis error: {}", e),
+            });
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
+        })?;
+
+    redis_client
+        .del(&[
+            refresh_token_details.token_uuid.to_string(),
+            auth_guard.access_token_uuid.to_string(),
+        ])
+        .await
+        .map_err(|e| {
+            let error_response = serde_json::json!({
+                "status": "error",
+                "message": format_args!("{:?}", e)
+            });
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
+        })?;
+
+    let _ = sqlx::query_as!(
+        User,
+        "DELETE FROM users WHERE email = ?",
+        body.email.to_ascii_lowercase()
+    )
+    .fetch_optional(&data.db)
+    .await
+    .map_err(|e| {
+        let error_response = serde_json::json!({
+            "Failure":  {
+                "status": "error",
+                "message": format!("Database error: {}", e)
+            }
+        });
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
+    })?;
+
+    let access_cookie = Cookie::build("access_token", "")
+        .path("/")
+        .max_age(time::Duration::minutes(-1))
+        .same_site(SameSite::Lax)
+        .http_only(true)
+        .finish();
+    let refresh_cookie = Cookie::build("refresh_token", "")
+        .path("/")
+        .max_age(time::Duration::minutes(-1))
+        .same_site(SameSite::Lax)
+        .http_only(true)
+        .finish();
+
+    let logged_in_cookie = Cookie::build("logged_in", "false")
+        .path("/")
+        .max_age(time::Duration::minutes(-1))
+        .same_site(SameSite::Lax)
+        .http_only(false)
+        .finish();
+
+    let mut headers = HeaderMap::new();
+    headers.append(
+        header::SET_COOKIE,
+        access_cookie.to_string().parse().unwrap(),
+    );
+    headers.append(
+        header::SET_COOKIE,
+        refresh_cookie.to_string().parse().unwrap(),
+    );
+    headers.append(
+        header::SET_COOKIE,
+        logged_in_cookie.to_string().parse().unwrap(),
+    );
+
+    let mut response = Response::new(json!({"status": "success"}).to_string());
+    response.headers_mut().extend(headers);
+    Ok(response)
+}
+
 pub async fn verify_email_handler(
     State(data): State<Arc<AppState>>,
     Path(verification_code): Path<String>,
