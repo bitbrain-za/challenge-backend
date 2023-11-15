@@ -1,7 +1,7 @@
 {
     "client": "Thunder Client",
     "collectionName": "Challenge Server",
-    "dateExported": "2023-11-08T11:15:04.784Z",
+    "dateExported": "2023-11-15T08:33:20.189Z",
     "version": "1.1",
     "folders": [
         {
@@ -86,6 +86,25 @@
             "tests": []
         },
         {
+            "_id": "0636f9c8-6a0f-4c20-94dd-203eb6a6ceb8",
+            "colId": "5d762d29-c16a-4b12-a458-88e9ba10a110",
+            "containerId": "d02c0701-ae70-492a-930b-651f06ec4ee3",
+            "name": "Delete Account",
+            "url": "http://localhost:3000/api/auth/deleteaccount",
+            "method": "POST",
+            "sortNum": 18125,
+            "created": "2023-11-15T08:27:16.984Z",
+            "modified": "2023-11-15T08:27:26.080Z",
+            "headers": [],
+            "params": [],
+            "body": {
+                "type": "json",
+                "raw": "{\n    \"email\": \"admin@admin.com\"\n}",
+                "form": []
+            },
+            "tests": []
+        },
+        {
             "_id": "29727254-181c-43e1-9f37-e84beb674428",
             "colId": "5d762d29-c16a-4b12-a458-88e9ba10a110",
             "containerId": "d02c0701-ae70-492a-930b-651f06ec4ee3",
@@ -135,10 +154,10 @@
             "containerId": "d02c0701-ae70-492a-930b-651f06ec4ee3",
             "name": "Logout",
             "url": "http://localhost:3000/api/auth/logout",
-            "method": "GET",
+            "method": "POST",
             "sortNum": 20000,
             "created": "2023-10-25T10:40:41.095Z",
-            "modified": "2023-10-25T10:43:14.905Z",
+            "modified": "2023-11-15T08:28:55.969Z",
             "headers": [],
             "params": [],
             "tests": []
