@@ -84,35 +84,54 @@ pub async fn register_user_handler(
         verification_code
     );
 
-    let verification_mail = Email::new_registration(
-        body.name.to_string(),
-        body.email.to_string().to_ascii_lowercase(),
-        verification_url,
-    );
-    verification_mail.send().map_err(|e| {
-        let error_response = serde_json::json!({
-            "status": "fail",
-            "message": format!("Error sending verification email: {}", e),
-        });
-        (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
-    })?;
+    if !cfg!(debug_assertions) {
+        let verification_mail = Email::new_registration(
+            body.name.to_string(),
+            body.email.to_string().to_ascii_lowercase(),
+            verification_url,
+        );
+        verification_mail.send().map_err(|e| {
+            let error_response = serde_json::json!({
+                "status": "fail",
+                "message": format!("Error sending verification email: {}", e),
+            });
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
+        })?;
 
-    sqlx::query!(
-        "INSERT INTO users (name, email, password, verification_code) VALUES (?, ?, ?, ?)",
-        body.name.to_string(),
-        body.email.to_string().to_ascii_lowercase(),
-        hashed_password,
-        verification_code
-    )
-    .execute(&data.db)
-    .await
-    .map_err(|e| {
-        let error_response = serde_json::json!({
-            "status": "fail",
-            "message": format!("Database error: {}", e),
-        });
-        (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
-    })?;
+        sqlx::query!(
+            "INSERT INTO users (name, email, password, verification_code) VALUES (?, ?, ?, ?)",
+            body.name.to_string(),
+            body.email.to_string().to_ascii_lowercase(),
+            hashed_password,
+            verification_code
+        )
+        .execute(&data.db)
+        .await
+        .map_err(|e| {
+            let error_response = serde_json::json!({
+                "status": "fail",
+                "message": format!("Database error: {}", e),
+            });
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
+        })?;
+    } else {
+        sqlx::query!(
+            "INSERT INTO users (name, email, password, verified) VALUES (?, ?, ?, ?)",
+            body.name.to_string(),
+            body.email.to_string().to_ascii_lowercase(),
+            hashed_password,
+            true
+        )
+        .execute(&data.db)
+        .await
+        .map_err(|e| {
+            let error_response = serde_json::json!({
+                "status": "fail",
+                "message": format!("Database error: {}", e),
+            });
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
+        })?;
+    }
 
     let user_response =
         serde_json::json!({"status": "success","message": "User created successfully"});
