@@ -115,3 +115,100 @@ pub async fn post_binary(
 
     (StatusCode::OK, serde_json::to_string(&res).unwrap())
 }
+
+pub async fn get_challenge(extract::Path(id): extract::Path<String>) -> impl IntoResponse {
+    let challenges = format!("challenge for {}", id);
+    debug!("Get challenge: {}", challenges);
+
+    let judge = option_env!("JUDGE_PATH").unwrap_or("judge").to_string();
+    let mut command = std::process::Command::new(judge);
+    command.arg("-g").arg(id);
+
+    let output = match command.output() {
+        Ok(o) => {
+            debug!("Output: {:?}", o);
+            if o.status.success() {
+                let s = String::from_utf8_lossy(&o.stdout).to_string();
+                let json: serde_json::Value = match serde_json::from_str(&s) {
+                    Ok(j) => j,
+                    Err(e) => {
+                        error!("Failed to parse json: {}", e);
+                        return (
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            "Failed to parse json".to_string(),
+                        );
+                    }
+                };
+                let json = match serde_json::to_string_pretty(&json) {
+                    Ok(j) => j,
+                    Err(e) => {
+                        error!("Failed to pretty print json: {}", e);
+                        return (
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            "Failed to pretty print json".to_string(),
+                        );
+                    }
+                };
+                debug!("Output: {}", json);
+                json
+            } else {
+                log::error!(
+                    "Error running script: {}",
+                    String::from_utf8_lossy(&o.stderr)
+                );
+                String::from_utf8_lossy(&o.stderr).to_string()
+            }
+        }
+        Err(e) => e.to_string(),
+    };
+    log::debug!("Output: {:?}", output);
+    (StatusCode::OK, serde_json::to_string(&output).unwrap())
+}
+
+pub async fn get_challenges() -> impl IntoResponse {
+    let challenges = String::from("Get all challenges");
+    debug!("Get challenge: {}", challenges);
+
+    let judge = option_env!("JUDGE_PATH").unwrap_or("judge").to_string();
+    let mut command = std::process::Command::new(judge);
+    command.arg("-g");
+
+    let output = match command.output() {
+        Ok(o) => {
+            if o.status.success() {
+                let s = String::from_utf8_lossy(&o.stdout).to_string();
+                let json: serde_json::Value = match serde_json::from_str(&s) {
+                    Ok(j) => j,
+                    Err(e) => {
+                        error!("Failed to parse json: {}", e);
+                        return (
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            "Failed to parse json".to_string(),
+                        );
+                    }
+                };
+                let json = match serde_json::to_string_pretty(&json) {
+                    Ok(j) => j,
+                    Err(e) => {
+                        error!("Failed to pretty print json: {}", e);
+                        return (
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            "Failed to pretty print json".to_string(),
+                        );
+                    }
+                };
+                debug!("Output: {}", json);
+                json
+            } else {
+                log::error!(
+                    "Error running script: {}",
+                    String::from_utf8_lossy(&o.stderr)
+                );
+                String::from_utf8_lossy(&o.stderr).to_string()
+            }
+        }
+        Err(e) => e.to_string(),
+    };
+    log::debug!("Output: {:?}", output);
+    (StatusCode::OK, serde_json::to_string(&output).unwrap())
+}
