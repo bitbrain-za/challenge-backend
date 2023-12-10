@@ -11,7 +11,7 @@ use axum::http::{
     header::{AUTHORIZATION, CONTENT_TYPE, ORIGIN},
     Method,
 };
-use axum_server::tls_rustls::RustlsConfig;
+// use axum_server::tls_rustls::RustlsConfig;
 use config::Config;
 use envcrypt::option_envc;
 use log::{info, LevelFilter};
@@ -19,8 +19,9 @@ use redis::Client;
 use route::create_router;
 use simple_logger::SimpleLogger;
 use sqlx::{mysql::MySqlPoolOptions, MySql, Pool};
+use std::net::SocketAddr;
+// use std::path::PathBuf;
 use std::sync::Arc;
-use std::{net::SocketAddr, path::PathBuf};
 use tower_http::cors::CorsLayer;
 
 pub struct AppState {
@@ -63,11 +64,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .expect("Failed to connect to the DB");
 
     let args = std::env::args().collect::<Vec<String>>();
-    let mut tls = false;
+    // let mut tls = false;
     for (i, arg) in args.iter().enumerate() {
-        if arg == "-S" {
-            tls = true;
-        }
+        // if arg == "-S" {
+        //     tls = true;
+        // }
         if arg == "-p" {
             if let Some(p) = args.get(i + 1) {
                 let p = p.parse::<u16>().expect("Invalid port number");
@@ -99,12 +100,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    let tls_config = RustlsConfig::from_pem_file(
-        PathBuf::from(&config.tls_cert_path),
-        PathBuf::from(&config.tls_key_path),
-    )
-    .await
-    .unwrap();
+    // let tls_config = RustlsConfig::from_pem_file(
+    //     PathBuf::from(&config.tls_cert_path),
+    //     PathBuf::from(&config.tls_key_path),
+    // )
+    // .await
+    // .unwrap();
 
     let origins = [
         "http://localhost:8080".parse()?,
@@ -123,20 +124,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }))
     .layer(cors);
 
-    if tls {
-        info!("Starting server with TLS on port {}", ports.https);
-        let addr = SocketAddr::from(([0, 0, 0, 0], ports.https));
-        axum_server::bind_rustls(addr, tls_config)
-            .serve(app.into_make_service())
-            .await
-            .unwrap();
-    } else {
-        info!("Starting server on port {}", ports.http);
-        let addr = SocketAddr::from(([0, 0, 0, 0], ports.http));
-        axum::Server::bind(&addr)
-            .serve(app.into_make_service())
-            .await
-            .unwrap();
-    }
+    // if tls {
+    //     info!("Starting server with TLS on port {}", ports.https);
+    //     let addr = SocketAddr::from(([0, 0, 0, 0], ports.https));
+    //     axum_server::bind_rustls(addr, tls_config)
+    //         .serve(app.into_make_service())
+    //         .await
+    //         .unwrap();
+    // } else {
+    info!("Starting server on port {}", ports.http);
+    let addr = SocketAddr::from(([0, 0, 0, 0], ports.http));
+    axum::Server::bind(&addr)
+        .serve(app.into_make_service())
+        .await
+        .unwrap();
+    // }
     Ok(())
 }

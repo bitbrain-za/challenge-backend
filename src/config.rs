@@ -18,9 +18,8 @@ pub struct Config {
     pub refresh_token_public_key: String,
     pub refresh_token_expires_in: String,
     pub refresh_token_max_age: i64,
-
-    pub tls_cert_path: String,
-    pub tls_key_path: String,
+    // pub tls_cert_path: String,
+    // pub tls_key_path: String,
 }
 
 impl Config {
@@ -49,8 +48,8 @@ impl Config {
             .parse::<i64>()
             .unwrap();
 
-        let tls_cert_path = option_envc!("TLS_CERT_PATH").unwrap().into();
-        let tls_key_path = option_envc!("TLS_KEY_PATH").unwrap().into();
+        // let tls_cert_path = option_envc!("TLS_CERT_PATH").unwrap().into();
+        // let tls_key_path = option_envc!("TLS_KEY_PATH").unwrap().into();
 
         Config {
             my_url,
@@ -69,9 +68,8 @@ impl Config {
             refresh_token_public_key,
             refresh_token_expires_in,
             refresh_token_max_age,
-
-            tls_cert_path,
-            tls_key_path,
+            // tls_cert_path,
+            // tls_key_path,
         }
     }
 }
