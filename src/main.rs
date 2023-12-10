@@ -112,9 +112,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     ];
     let cors = CorsLayer::new()
         .allow_methods([Method::GET, Method::POST])
+        .allow_headers([AUTHORIZATION, CONTENT_TYPE, ORIGIN])
         .allow_credentials(true)
-        .allow_origin(origins)
-        .allow_headers([AUTHORIZATION, CONTENT_TYPE, ORIGIN]);
+        .allow_origin(origins);
 
     let app = create_router(Arc::new(AppState {
         db: pool.clone(),

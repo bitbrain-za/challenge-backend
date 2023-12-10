@@ -162,7 +162,7 @@ pub async fn get_challenge(extract::Path(id): extract::Path<String>) -> impl Int
         Err(e) => e.to_string(),
     };
     log::debug!("Output: {:?}", output);
-    (StatusCode::OK, serde_json::to_string(&output).unwrap())
+    (StatusCode::OK, output)
 }
 
 pub async fn get_challenges() -> impl IntoResponse {
@@ -187,7 +187,7 @@ pub async fn get_challenges() -> impl IntoResponse {
                         );
                     }
                 };
-                let json = match serde_json::to_string_pretty(&json) {
+                match serde_json::to_string(&json) {
                     Ok(j) => j,
                     Err(e) => {
                         error!("Failed to pretty print json: {}", e);
@@ -196,9 +196,7 @@ pub async fn get_challenges() -> impl IntoResponse {
                             "Failed to pretty print json".to_string(),
                         );
                     }
-                };
-                debug!("Output: {}", json);
-                json
+                }
             } else {
                 log::error!(
                     "Error running script: {}",
@@ -210,5 +208,5 @@ pub async fn get_challenges() -> impl IntoResponse {
         Err(e) => e.to_string(),
     };
     log::debug!("Output: {:?}", output);
-    (StatusCode::OK, serde_json::to_string(&output).unwrap())
+    (StatusCode::OK, output)
 }
