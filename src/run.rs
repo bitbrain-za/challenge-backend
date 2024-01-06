@@ -74,7 +74,6 @@ impl Submission {
         let mut command = std::process::Command::new(Self::get_judge());
         command
             .current_dir("/tmp/code_challenge")
-            .env("PATH", "/tmp/code_challenge")
             .arg("-n")
             .arg(&self.player)
             .arg("-C")
@@ -87,6 +86,7 @@ impl Submission {
         if self.test {
             command.arg("-t");
         }
+        log::debug!("Command: {:?}", command);
 
         let output = match command.output() {
             Ok(o) => {
@@ -105,7 +105,7 @@ impl Submission {
                 message: format!("Error running command: {}", e),
             },
         };
-        let _ = self.delete_file();
+        // let _ = self.delete_file();
         output
     }
 
